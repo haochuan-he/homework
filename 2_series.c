@@ -1,4 +1,6 @@
-  by HHC
+// 23.10.8 19点47分
+// homework
+//  by HHC
 
 #include <stdio.h>
 #include <math.h>

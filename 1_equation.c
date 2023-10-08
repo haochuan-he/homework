@@ -15,7 +15,7 @@
     double part1, part2;
     part1 = -q / 2.0;
     part2 = pow((q * q / 4 + p * p * p / 27), 1.0 / 2);
-    // printf("%lf %lf", part1, part2);
+    printf("%lf %lf", part1, part2); 
     x1 = pow(part1 + part2, 1.0 / 3) + pow(part1 - part2, 1.0 / 3);
     printf("%.3f", x1);
     return 0;
