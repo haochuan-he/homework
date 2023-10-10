@@ -13,7 +13,9 @@ int main()
     for (int i = 1; i <= n; i++)
     {
         jiecheng_yu = 1;
-        for (int j = 1; j <= i; j++)
+        for (int j = 1;
+         j <= i;
+          j++)
         {
             jiecheng_yu = j * jiecheng_yu % M;
         }
