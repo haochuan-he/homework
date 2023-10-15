@@ -1,3 +1,24 @@
+// 以下程序来自罗荣鑫：
+// 通过按位进行异或运算在同一变量res中进行，同一数两次进行会回复为0，最终剩下的1010...将会是落单的数（出现奇数次）
+/*
+#include<stdio.h>
+#include<math.h>
+
+int main(void){
+    int n;
+    scanf("%d",&n);
+    int res=0;
+    for(int i=1;i<=n*2-1;i++){
+        int tmp;
+        scanf("%d",&tmp);
+        res^=tmp;
+    }
+    printf("%d\n",res);
+    return 0;
+}
+*/
+
+/*
 // 23.10.8 18点41分
 // for homework
 // by HHC
@@ -38,3 +59,5 @@ int main()
 
     return 0;
 }
+
+*/
