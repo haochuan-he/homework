@@ -1,13 +1,15 @@
 // 23.10.22
-// hoemwork
+// homework
 // by HHC
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int xa, ya, xb, yb, xc, yc, lmin = 0;
 char u = 'U', d = 'D', l = 'L', r = 'R';
 
-int abv(int a, int b);
+// int abv(int a, int b);
 int max(int a, int b);
 int min(int a, int b);
 int isob(void);
@@ -21,11 +23,11 @@ int main()
 {
     scanf("%d%d%d%d%d%d", &xa, &ya, &xb, &yb, &xc, &yc);
 
-    // for part 1
+    // for part 1: rectangel
     // TESTED
-    if (abv(xa, xb) > 0 && abv(ya, yb) > 0)
+    if (abs(xa - xb) > 0 && abs(ya - yb) > 0)
     {
-        lmin = abv(xa, xb) + abv(ya, yb);
+        lmin = abs(xa - xb) + abs(ya - yb);
         printf("%d\n", lmin);
 
         if (isob())
@@ -60,25 +62,25 @@ int main()
     {
         if (isob() == 0)
         {
-            lmin = abv(ya, yb);
+            lmin = abs(ya - yb);
             printf("%d\n", lmin);
             vertical();
         }
         else // isob()==1
         {
-            lmin = abv(ya, yb) + 2;
+            lmin = abs(ya - yb) + 2;
             printf("%d\n", lmin);
             if (ya > yb)
             {
-                go(d, abv(ya, yc) - 1);
+                go(d, abs(ya - yc) - 1);
                 printf("RDDL");
-                go(d, abv(yc, yb) - 1);
+                go(d, abs(yc - yb) - 1);
             }
             else
             {
-                go(u, abv(ya, yc) - 1);
+                go(u, abs(ya - yc) - 1);
                 printf("RUUL");
-                go(u, abv(yc, yb) - 1);
+                go(u, abs(yc - yb) - 1);
             }
         }
     }
@@ -88,25 +90,25 @@ int main()
     {
         if (isob() == 0)
         {
-            lmin = abv(xa, xb);
+            lmin = abs(xa - xb);
             printf("%d\n", lmin);
             horizonal();
         }
         else // isob()==1
         {
-            lmin = abv(xa, xb) + 2;
+            lmin = abs(xa - xb) + 2;
             printf("%d\n", lmin);
             if (xa < xb)
             {
-                go(r, abv(xa, xc) - 1);
-                printf("URR");
-                go(d, abv(xb, xc) - 1);
+                go(r, abs(xa - xc) - 1);
+                printf("URRD");
+                go(r, abs(xb - xc) - 1);
             }
             else
             {
-                go(l, abv(xa, xc) - 1);
-                printf("ULL");
-                go(d, abv(xb, xc) - 1);
+                go(l, abs(xa - xc) - 1);
+                printf("ULLD");
+                go(l, abs(xb - xc) - 1);
             }
         }
     }
@@ -123,17 +125,17 @@ int main()
  *
  * TESTED
  */
-int abv(int a, int b)
-{
-    if (a - b > 0)
-    {
-        return (a - b);
-    }
-    else
-    {
-        return (b - a);
-    }
-}
+// int abs(int a, int b)
+// {
+//     if (a - b > 0)
+//     {
+//         return (a - b);
+//     }
+//     else
+//     {
+//         return (b - a);
+//     }
+// }
 /***************************************************************
  *  max:return the bigger one of a,b
  *
@@ -174,7 +176,7 @@ int min(int a, int b)
  */
 int isob(void)
 {
-    if ((xc < min(xa, xb) || xc > max(xa, xb)) && (yc < min(ya, yb) || yc > max(ya, yb)))
+    if ((xc < min(xa, xb) || xc > max(xa, xb)) || (yc < min(ya, yb) || yc > max(ya, yb)))
     {
         return 0;
     }
@@ -184,17 +186,30 @@ int isob(void)
     }
 }
 /**********************************************************************
- *  go: printf char a for stop times;
+ *  go: printf char a for 'step' times;
  *
  *TESTED
  */
 int go(char a, int step)
 {
-    for (int i = 0; i < step; i++)
+    if (step > 10000)
+    {
+        char buffer[10000];
+        memset(buffer, a, 10000);
+        for (int j = 0; j < (step / 10000); j++)
+        {
+            printf("%s", buffer);
+        }
+    }
+    for (int i = 0; i < (step % 10000); i++)
     {
         putchar(a);
     }
-    return 0;
+    // for (int i = 0; i < step; i++)
+    // {
+    //     putchar(a);
+    // }
+    // return 0;
 }
 /************************************************************************
  * horizonal: go horizonally form A to B
@@ -205,11 +220,11 @@ int horizonal(void)
 {
     if (xa < xb)
     {
-        go(r, abv(xa, xb));
+        go(r, abs(xa - xb));
     }
     else
     {
-        go(l, abv(xa, xb));
+        go(l, abs(xa - xb));
     }
     return 0;
 }
@@ -222,11 +237,11 @@ int vertical(void)
 {
     if (ya < yb)
     {
-        go(u, abv(ya, yb));
+        go(u, abs(ya - yb));
     }
     else
     {
-        go(d, abv(ya, yb));
+        go(d, abs(ya - yb));
     }
     return 0;
 }

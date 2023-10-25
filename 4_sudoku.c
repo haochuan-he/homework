@@ -35,7 +35,9 @@ int main()
 
     for (int i = 0; i < MAX; i++)
     {
-        for (int j = 0; j < MAX; j++)
+        for (int j = 0; j < MAX; j++) 
+
+        
         {
 
             if (flag[i][j] != -2)
