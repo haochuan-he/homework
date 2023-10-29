@@ -4,12 +4,19 @@
 
 #include <stdio.h>
 #define MAX 1012
-#define max(a, b) (a > b ? a : b)
+#define my_max(a, b) (a > b ? a : b)
+
+int run_one_time(int loop);
 
 int main()
 {
     int loop = 1;
-notend:
+    run_one_time(loop);
+    return 0;
+}
+
+int run_one_time(int loop)
+{
     loop--;
     // input
     int a[MAX] = {0}, i = 1, b[MAX] = {0}, j = 1, sum[MAX] = {0};
@@ -28,29 +35,64 @@ notend:
     }
 
     // calculate
-    int l = 1;
-    for (; l <= max(i, j); l++) // WRONG when the a,b digit not equal
+    int max = my_max(i, j);
+    int l = my_max(i, j);
+    for (; l > 0; l--) // ()WRONG when the a,b digit not equal
     {
-        sum[l] = a[l] + b[l];
+        if (i > j)
+        {
+            if (j > 0)
+            {
+                sum[l] = a[i] + b[j];
+                i--;
+                j--;
+            }
+            else
+            {
+                sum[l] = a[i];
+                i--;
+            }
+        }
+        else if (j > i)
+        {
+            if (i > 0)
+            {
+                sum[l] = a[i] + b[j];
+                i--;
+                j--;
+            }
+            else
+            {
+                sum[l] = b[j];
+                j--;
+            }
+        }
+        else
+        {
+            sum[l] = a[l] + b[l];
+        }
     }
-    for (; l >= 0; l--)
+    for (l = max; l >= 0; l--)
     {
         if (sum[l] >= 10)
         {
-            sum[l] = sum[l] / 10;
-            sum[l - 1]++;
+            sum[l] = sum[l] % 10;
+            if (l > 0)
+            {
+                sum[l - 1]++;
+            }
         }
     }
 
-    for (int t = (1 - (sum[0] != 0)); t < max(i, j); t++) // to judge the possible carry
+    for (int t = (1 - (sum[0] != 0)); t < max; t++) // to judge the possible carry
     {
         printf("%d", sum[t]);
     }
+    printf("\n");
     if (loop > 0)
     {
-        goto notend;
+        return run_one_time(loop);
     }
-
     return 0;
 }
 /*

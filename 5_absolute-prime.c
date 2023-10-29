@@ -13,7 +13,7 @@ int main()
     int n = 0, flip = 0, cnt = 0;
     scanf("%d", &n);
 
-    for (int i = 1; i <= n; i++)
+    for (int i = 2; i <= n; i++)
     {
         if (IsPrime(i) && IsPrime(Flip(i)))
         {
@@ -21,7 +21,7 @@ int main()
         }
     }
 
-    printf("%d", cnt-1);
+    printf("%d", cnt);
 
     // // test
     // int num = Flip(n);
