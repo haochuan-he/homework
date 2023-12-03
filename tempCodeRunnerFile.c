@@ -1,2 +1,4 @@
-
-    for (int k = 0; k <= len_all; k++)
+    // if (*(position + 1) != '\0')
+            // {
+            //     flag_fen = 0;
+            // }
