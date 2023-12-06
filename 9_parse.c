@@ -74,7 +74,7 @@ int LegalCheck(char all[][MAX], int cnt, int legal[])
         {
             if (all[++row][0] == '\0')
             {
-                printf("%s: option requires an argument -- '%c'", all[0], all[row-1][1]);
+                printf("%s: option requires an argument -- '%c'", all[0], all[row - 1][1]);
                 return 1;
             }
             row++;
