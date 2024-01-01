@@ -1,4 +1,6 @@
-    // if (*(position + 1) != '\0')
-            // {
-            //     flag_fen = 0;
-            // }
+   // printf("The %d :\n", m);
+        // printf("stack %d :", 1 + first);
+        // Print(all[first]);
+        // printf("stack %d :", 1 + second);
+        // Print(all[second]);
+        // printf("----------------\n\n--------------");
