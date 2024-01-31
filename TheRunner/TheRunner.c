@@ -24,6 +24,7 @@ void MvaddchCol(int y, int x, char ch);
 void MvaddchRow(int y, int x, char ch);
 void MvaddString(int y, int x, char ch[]);
 void MvaddchMiddle(int y, int x, int runway, char ch);
+void Clear();
 void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int status);
 void InitObstacle(Obstacle *obstacle);
 void GenerateObstacle(Obstacle *obstacle, int random);
@@ -31,7 +32,9 @@ void MoveObstacle(Obstacle *obstacle, int y);
 void MoveMan(char ch, int *man, int *status, int *status_cnt);
 void Pause(int y, int x, char ch);
 void ChangeManStatus(int *status, int *status_cnt);
-void HitCheck(Obstacle obstacle, int man, int statsus);
+void HitCheck(int y, int x, Obstacle obstacle, int man, int statsus, int *score);
+
+void GameOver(int score, int y, int x);
 
 //
 //
@@ -74,7 +77,7 @@ int main()
         GenerateObstacle(&obstacle, random_variable);
         Display(h, w, man, score, speed, obstacle, status);
         MoveObstacle(&obstacle, h);
-        HitCheck(obstacle, &score, man);
+        HitCheck(h, w, obstacle, man, status, &score);
         ChangeManStatus(&status, &status_cnt);
 
         while (kbhit() != 0)
@@ -182,6 +185,15 @@ void MvaddchMiddle(int y, int x, int runway, char ch)
     }
 }
 
+/**********************************************************************
+ *void Clear();
+ *
+ * 实现清屏
+ ***********************************************************************/
+void Clear()
+{
+    system("cls"); // 启动游戏的时候有几率闪屏
+}
 /**************************************************************************
  *void Display(int y, int x)
  *
@@ -196,8 +208,7 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     // {
     //     printf("\n");
     // }
-    system("cls");
-
+    Clear();
     char CharOfRunway = '|'; // 显示跑道
     MvaddchCol(y, x / 3, CharOfRunway);
     MvaddchCol(y, 4 * x / 9, CharOfRunway);
@@ -344,7 +355,7 @@ void Pause(int y, int x, char ch)
 {
     if (ch == ' ')
     {
-        system("cls");
+        Clear();
         MvaddchRow(y / 3, x, '-');
         MvaddchRow(2 * y / 3, x, '-');
         MvaddString(y / 3 + 1, x / 2 - 2, "PAUSE");
@@ -383,6 +394,36 @@ void ChangeManStatus(int *status, int *status_cnt)
  *
  *需要传入（障碍物，人物位置(默认3*y/4处),人物状态）
  ****************************************************************/
-void HitCheck(Obstacle obstacle, int man, int status)
+void HitCheck(int y, int x, Obstacle obstacle, int man, int status, int *score)
 {
+    // 检测障碍物,判断游戏是否会停止
+    for (int i = 1; i <= 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            if (obstacle.Down[i][j] == ((int)(MAN_Y * y) + 1) && status != 1 && man == i)
+            {
+                GameOver(*score, y, x);
+                return;
+            }
+        }
+    }
+}
+
+/***************************************************************
+ *void GameOver(int score);
+ *
+ *完成结算游戏显示，衔接重开和结束程序逻辑
+ *
+ ***************************************************************/
+void GameOver(int score, int y, int x)
+{
+    Sleep(1000);
+    Clear();
+    MvaddchRow(y / 3, x, '-');
+    MvaddchRow(2 * y / 3, x, '-');
+    MvaddString(y / 3 + 1, x / 2 - 4, "Game over!");
+    MvaddString(2 * y / 3 - 1, x / 2 - 8, "Your final score:");
+    printf("%d", score);
+    Sleep(10000); // 需要修改
 }
