@@ -20,12 +20,15 @@ typedef struct Obstacle // 障碍物，数组中1，2，3分别表示左中右�
 
 void Mvaddch(int y, int x, char ch);
 void MvaddchCol(int y, int x, char ch);
-void MvaddchRow(int y, int x, char ch[]);
+void MvaddchRow(int y, int x, char ch);
+void MvaddString(int y, int x, char ch[]);
 void MvaddchMiddle(int y, int x, int runway, char ch);
 void Display(int y, int x, int man, int score, int speed, Obstacle obstacle);
 void InitObstacle(Obstacle *obstacle);
 void GenerateObstacle(Obstacle *obstacle, int random);
 void MoveObstacle(Obstacle *obstacle, int y);
+int MoveMan(char ch, int man);
+void Pause(int y, int x, char ch);
 
 //
 //
@@ -70,10 +73,17 @@ int main()
         while (kbhit() != 0)
         {                      // 如果它检测到有键盘敲击，返回非零。没有则返回 0
             char ch = getch(); // 有键盘敲击，我们获取是哪一个键
+
+            Pause(h, w, ch); // 暂停逻辑(ch==' ')
+
+            man = MoveMan(ch, man); // 人物左右移动
+
             // Sleep(1000);       // 程序暂停 1000 毫秒
         }
         Sleep(100 - speed);
     }
+
+    /************************************************************************************/
     // 游戏结束，我们要恢复光标显示
     cci.bVisible = TRUE;                       // 可见
     SetConsoleCursorInfo(consoleHandle, &cci); // 重新设置
@@ -106,21 +116,35 @@ void Mvaddch(int y, int x, char ch)
  **********************************************************************/
 void MvaddchCol(int y, int x, char ch)
 {
-    for (int col = 0; col < y; col++)
+    for (int row = 0; row < y; row++)
     {
-        Mvaddch(col, x, ch);
+        Mvaddch(row, x, ch);
     }
 }
 
+/*********************************************************************
+ *void MvaddchRow(int y, int x, char ch);
+ *
+ *打印一整行填满屏幕的字符ch
+ *
+ * 需要传入（期望打印的行处于的y，屏幕宽度，字符）
+ ********************************************************************/
+void MvaddchRow(int y, int x, char ch)
+{
+    for (int col = 0; col < x; col++)
+    {
+        Mvaddch(y, col, ch);
+    }
+}
 /*******************************************************************
- *void MvaddchRow(int y, int x, char ch[])
+ *void MvaddString(int y, int x, char ch[])
  *
  *从 x,y处开始打印字符串ch[]
  *
  * 需要传入（期望出现的y坐标，期望出现的x坐标，打印字符串）
  *
  **********************************************************************/
-void MvaddchRow(int y, int x, char ch[])
+void MvaddString(int y, int x, char ch[])
 {
     COORD co = (COORD){.X = x, .Y = y};
     SetConsoleCursorPosition(consoleHandle, co); // 设置你的光标位置
@@ -138,13 +162,13 @@ void MvaddchMiddle(int y, int x, int runway, char ch)
     switch (runway)
     {
     case 1:
-        Mvaddch(3 * y / 4, 7 * x / 18, ch); // 左道
+        Mvaddch(y, 7 * x / 18, ch); // 左道
         break;
     case 2:
-        Mvaddch(3 * y / 4, x / 2, ch); // 中道
+        Mvaddch(y, x / 2, ch); // 中道
         break;
     case 3:
-        Mvaddch(3 * y / 4, 11 * x / 18, ch); // 右道
+        Mvaddch(y, 11 * x / 18, ch); // 右道
         break;
     default:
         printf("the MvaddchMiddle have wrong!\n");
@@ -186,9 +210,9 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle)
         }
     }
 
-    MvaddchRow(y - 2, 2, "Score:"); // 显示得分
+    MvaddString(y - 2, 2, "Score:"); // 显示得分
     printf("%d", score);
-    MvaddchRow(y - 3, 2, "Speed:"); // 显示速度
+    MvaddString(y - 3, 2, "Speed:"); // 显示速度
     printf("%d", score);
 }
 
@@ -231,7 +255,7 @@ void GenerateObstacle(Obstacle *obstacle, int random)
 }
 
 /*****************************************************
- *void MoveObstacle(Obstacle *obstacle)
+ *void MoveObstacle(Obstacle *obstacle, int y)
  *
  *移动障碍物
  *
@@ -253,5 +277,51 @@ void MoveObstacle(Obstacle *obstacle, int y)
                 obstacle->Down[i][j]++;
             }
         }
+    }
+}
+
+/*****************************************************
+ *int MoveMan(char ch,int man)
+ *
+ *根据ch反馈人物移动,1/2/3 代表左中右
+ *
+ * 需要传入ch
+ *****************************************************/
+int MoveMan(char ch, int man)
+{
+    if ((ch == 'a' || ch == 'A') && man != 1)
+    {
+        return man - 1;
+    }
+    else if ((ch == 'd' || ch == 'D') && man != 3)
+    {
+        return man + 1;
+    }
+    else
+    {
+        return man;
+    }
+}
+
+/******************************************************
+ *void Pause(int y, int x, char ch);
+ *
+ *暂停逻辑，检测到空格时暂停
+ *
+ *********************************************************/
+void Pause(int y, int x, char ch)
+{
+    if (ch == ' ')
+    {
+        system("cls");
+        MvaddchRow(y / 3, x, '-');
+        MvaddchRow(2 * y / 3, x, '-');
+        MvaddString(y / 3 + 1, x / 2 - 2, "PAUSE");
+        MvaddString(2 * y / 3 - 1, x / 2 - 12, "Enter any key to continue......");
+        fflush(stdin); // 清空输入流缓存,避免连续按住空格暂停失败
+        Sleep(1000);
+        fflush(stdin); // 清空输入流缓存,避免连续按住空格暂停失败
+        // getchar();     // 需要回车确认，互动差劲
+        getch(); // 在conio.h库中，从键盘读取一个字符但不显示在控制台，然后自动添加一个回车。
     }
 }
