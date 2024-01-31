@@ -5,9 +5,10 @@
 #include <conio.h> // 必须
 #include <stdio.h>
 #include <windows.h> // 必须
-#include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
+
+#define MAN_Y 3.0 / 4 // 人物所处位置的y系数
 
 HANDLE consoleHandle; // 操作控制台（也就是那个黑框框）需要的一个变量
 int w, h;             // 高度，宽度，对应 y 和 x
@@ -23,12 +24,14 @@ void MvaddchCol(int y, int x, char ch);
 void MvaddchRow(int y, int x, char ch);
 void MvaddString(int y, int x, char ch[]);
 void MvaddchMiddle(int y, int x, int runway, char ch);
-void Display(int y, int x, int man, int score, int speed, Obstacle obstacle);
+void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int status);
 void InitObstacle(Obstacle *obstacle);
 void GenerateObstacle(Obstacle *obstacle, int random);
 void MoveObstacle(Obstacle *obstacle, int y);
-int MoveMan(char ch, int man);
+void MoveMan(char ch, int *man, int *status, int *status_cnt);
 void Pause(int y, int x, char ch);
+void ChangeManStatus(int *status, int *status_cnt);
+void HitCheck(Obstacle obstacle, int man, int statsus);
 
 //
 //
@@ -52,7 +55,9 @@ int main()
                                                // 到这里，闪烁的光标就消失了。
 
     // 游戏数据初始化
-    int speed = 0, score = 0, man = 2;
+    int speed = 0, score = 0, man = 2, status = 0, status_cnt = 0;
+    // status: 0 for standing, 1 for sliding, 2 for jumping
+
     Obstacle obstacle;
     InitObstacle(&obstacle);
 
@@ -67,17 +72,16 @@ int main()
     {
         int random_variable = rand();
         GenerateObstacle(&obstacle, random_variable);
-        Display(h, w, man, score, speed, obstacle);
+        Display(h, w, man, score, speed, obstacle, status);
         MoveObstacle(&obstacle, h);
+        HitCheck(obstacle, &score, man);
+        ChangeManStatus(&status, &status_cnt);
 
         while (kbhit() != 0)
-        {                      // 如果它检测到有键盘敲击，返回非零。没有则返回 0
-            char ch = getch(); // 有键盘敲击，我们获取是哪一个键
-
-            Pause(h, w, ch); // 暂停逻辑(ch==' ')
-
-            man = MoveMan(ch, man); // 人物左右移动
-
+        {                                            // 如果它检测到有键盘敲击，返回非零。没有则返回 0
+            char ch = getch();                       // 有键盘敲击，我们获取是哪一个键
+            Pause(h, w, ch);                         // 暂停逻辑(ch==' ')
+            MoveMan(ch, &man, &status, &status_cnt); // 人物左右移动
             // Sleep(1000);       // 程序暂停 1000 毫秒
         }
         Sleep(100 - speed);
@@ -136,6 +140,7 @@ void MvaddchRow(int y, int x, char ch)
         Mvaddch(y, col, ch);
     }
 }
+
 /*******************************************************************
  *void MvaddString(int y, int x, char ch[])
  *
@@ -150,6 +155,7 @@ void MvaddString(int y, int x, char ch[])
     SetConsoleCursorPosition(consoleHandle, co); // 设置你的光标位置
     printf("%s", ch);                            // 输出字符串
 }
+
 /***********************************************************************
  *void MvaddchMiddle(int y, int x, int runway, char ch);
  *
@@ -175,6 +181,7 @@ void MvaddchMiddle(int y, int x, int runway, char ch)
         break;
     }
 }
+
 /**************************************************************************
  *void Display(int y, int x)
  *
@@ -183,7 +190,7 @@ void MvaddchMiddle(int y, int x, int runway, char ch)
  *需要传入（屏幕高度，屏幕宽度）;详细参数可在函数内调整
  *
  * ************************************************************************/
-void Display(int y, int x, int man, int score, int speed, Obstacle obstacle)
+void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int status)
 {
     // for (int i = 0; i <= y; i++) // 清屏
     // {
@@ -197,7 +204,7 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle)
     MvaddchCol(y, 5 * x / 9, CharOfRunway);
     MvaddchCol(y, 2 * x / 3, CharOfRunway);
 
-    MvaddchMiddle(3 * y / 4, x, man, '*'); // 显示人物
+    MvaddchMiddle(MAN_Y * y, x, man, '*'); // 显示人物
 
     for (int i = 1; i <= 3; i++) // 显示障碍物
     {
@@ -214,6 +221,21 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle)
     printf("%d", score);
     MvaddString(y - 3, 2, "Speed:"); // 显示速度
     printf("%d", score);
+    MvaddString(MAN_Y * y, 2 * x / 3 + 1, "Status:"); // 显示人物状态
+    switch (status)
+    {
+    case 0:
+        printf("standing");
+        break;
+    case 1:
+        printf("sliding");
+        break;
+    case 2:
+        printf("jumping");
+        break;
+    default:
+        printf("display man status wrong!\n");
+    }
 }
 
 /*****************************************
@@ -281,25 +303,34 @@ void MoveObstacle(Obstacle *obstacle, int y)
 }
 
 /*****************************************************
- *int MoveMan(char ch,int man)
+ *void MoveMan(char ch, int *man, int *status, int *status_cnt)
  *
  *根据ch反馈人物移动,1/2/3 代表左中右
  *
  * 需要传入ch
  *****************************************************/
-int MoveMan(char ch, int man)
+void MoveMan(char ch, int *man, int *status, int *status_cnt)
 {
-    if ((ch == 'a' || ch == 'A') && man != 1)
+    // 左右移动更换跑道
+    if ((ch == 'a' || ch == 'A') && *man != 1)
     {
-        return man - 1;
+        *man -= 1;
     }
-    else if ((ch == 'd' || ch == 'D') && man != 3)
+    else if ((ch == 'd' || ch == 'D') && *man != 3)
     {
-        return man + 1;
+        *man += 1;
     }
-    else
+
+    // 改变人物状态
+    if (ch == 'w' || ch == 'W')
     {
-        return man;
+        *status = 2;
+        *status_cnt = 5; // 状态保持五帧
+    }
+    else if (ch == 's' || ch == 'S')
+    {
+        *status = 1;
+        *status_cnt = 5; // 状态保持五帧
     }
 }
 
@@ -324,4 +355,34 @@ void Pause(int y, int x, char ch)
         // getchar();     // 需要回车确认，互动差劲
         getch(); // 在conio.h库中，从键盘读取一个字符但不显示在控制台，然后自动添加一个回车。
     }
+}
+
+/*******************************************************
+ *void ChangeManStatus(int *status, int *status_cnt);
+ *
+ *检测并改变人物当前状态
+ *
+ * 需要传入当前状态以及状态计数器
+ ***********************************************************/
+void ChangeManStatus(int *status, int *status_cnt)
+{
+    if (*status_cnt == 0)
+    {
+        *status = 0;
+    }
+    else
+    {
+        *status_cnt -= 1;
+    }
+}
+
+/*******************************************************************
+ *void HitCheck(Obstacle obstacle, int *score, int man);
+ *
+ *检测人物与金币、障碍物等是否接触并产生动作
+ *
+ *需要传入（障碍物，人物位置(默认3*y/4处),人物状态）
+ ****************************************************************/
+void HitCheck(Obstacle obstacle, int man, int status)
+{
 }
