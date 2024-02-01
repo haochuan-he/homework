@@ -280,6 +280,13 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     {
         for (int j = 0; j < 3; j++)
         {
+            if (obstacle.Money[i][j][0] != 0)
+            {
+                for (int k = obstacle.Money[i][j][1]; k > 0; k--)
+                {
+                    MvaddchMiddle(obstacle.Money[i][j][0] + k - 1, x, i, '$');
+                }
+            }
             if (obstacle.Down[i][j] != 0)
             {
                 MvaddchMiddle(obstacle.Down[i][j], x, i, 'D');
@@ -291,13 +298,6 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
             if (obstacle.Stop[i][j] != 0)
             {
                 MvaddchMiddle(obstacle.Stop[i][j], x, i, 'X');
-            }
-            if (obstacle.Money[i][j][0] != 0)
-            {
-                for (int k = obstacle.Money[i][j][1]; k > 0; k--)
-                {
-                    MvaddchMiddle(obstacle.Money[i][j][0] + k - 1, x, i, '$');
-                }
             }
         }
     }
@@ -396,7 +396,7 @@ int GenerateObstaclePart(Obstacle obstacle, int i, int j)
     return (obstacle.Down[i][j] == 0 || obstacle.Down[i][j] > 5) &&
            (obstacle.Up[i][j] == 0 || obstacle.Up[i][j] > 5) &&
            (obstacle.Stop[i][j] == 0 || obstacle.Stop[i][j] > 5) &&
-           (obstacle.Money[i][j][0] == 0 || (obstacle.Money[i][j][0] - obstacle.Money[i][j][1] > 3));
+           (obstacle.Money[i][j][0] == 0 || (obstacle.Money[i][j][0] - obstacle.Money[i][j][1] > 5));
 }
 
 /*****************************************************
@@ -527,6 +527,12 @@ int HitCheck(int y, int x, Obstacle obstacle, int man, int status, int *score)
     {
         for (int j = 0; j < 3; j++)
         {
+            // 得钱
+            if (obstacle.Money[i][j][0] >= (int)(MAN_Y * y) &&
+                (int)(MAN_Y * y) >= obstacle.Money[i][j][0] - obstacle.Money[i][j][1])
+            {
+                *score += 5; // 1 $ = 5 scores
+            }
             // 撞上障碍物
             if (obstacle.Down[i][j] == ((int)(MAN_Y * y) + 1) && status != 1 && man == i)
             {
@@ -539,12 +545,6 @@ int HitCheck(int y, int x, Obstacle obstacle, int man, int status, int *score)
             if (obstacle.Stop[i][j] == ((int)(MAN_Y * y) + 1) && man == i)
             {
                 return 1; // 结束循环控制，启动游戏结算
-            }
-            // 得钱
-            if (obstacle.Money[i][j][0] <= (int)(MAN_Y * y) &&
-                (int)(MAN_Y * y) <= obstacle.Money[i][j][0] - obstacle.Money[i][j][1])
-            {
-                *score += 5; // 1 $ = 5 scores
             }
         }
     }
