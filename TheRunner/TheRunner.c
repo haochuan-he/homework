@@ -319,9 +319,9 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
         {
             if (obstacle.Money[i][j][0] != 0) // 显示金币
             {
-                for (int k = obstacle.Money[i][j][1]; k > 0; k--)
+                for (int k = 0; k < obstacle.Money[i][j][1] && (obstacle.Money[i][j][0] - k > 0); k++)
                 {
-                    MvaddchMiddle(obstacle.Money[i][j][0] - k + 1, x, i, '$');
+                    MvaddchMiddle(obstacle.Money[i][j][0] - k, x, i, '$');
                 }
             }
             if (obstacle.Down[i][j] != 0)
