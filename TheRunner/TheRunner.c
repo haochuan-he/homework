@@ -31,6 +31,7 @@ void MvaddString(int y, int x, char ch[]);
 void MvaddchMiddle(int y, int x, int runway, char ch);
 void Clear();
 void Echo(char *ch);
+int Confirm(int y, int x, char question[]);
 void ChangScoreAndSpeed(int *score, int *speed);
 void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int status);
 void InitObstacle(Obstacle *obstacle);
@@ -105,8 +106,11 @@ int main()
                 // Sleep(1000);       // 程序暂停 1000 毫秒
                 if (ch == '\e') // Esc结束游戏
                 {
-                    escape = 1;
-                    break;
+                    if (1 == Confirm(h, w, "Are you sure to STOP the game?"))
+                    {
+                        escape = 1;
+                        break;
+                    }
                 }
             }
             Sleep(200 - speed);
@@ -136,23 +140,31 @@ int main()
  ******************************************************************************/
 void GameStart(int y, int x, int *game_mode)
 {
-    Clear();
-    MvaddchRow(y / 3, x, '-');
-    MvaddchRow(2 * y / 3, x, '-');
-    MvaddString(y / 3 + 1, x / 2 - 4, "THE RUNNER");
-    MvaddString(y / 3 + 4, x / 2 - 10, "->Enter 1 for God Mode");
-    MvaddString(y / 3 + 5, x / 2 - 10, "->Enter any else key for Noraml Mode");
-    MvaddString(y / 3 + 3, x / 2 - 12, "Please chose your game mode:");
+    while (1)
+    {
+        Clear();
+        MvaddchRow(y / 3, x, '-');
+        MvaddchRow(2 * y / 3, x, '-');
+        MvaddString(y / 3 + 1, x / 2 - 4, "THE RUNNER");
+        MvaddString(y / 3 + 4, x / 2 - 10, "->Enter 1 for God Mode");
+        MvaddString(y / 3 + 5, x / 2 - 10, "->Enter any else key for Noraml Mode");
+        MvaddString(y / 3 + 3, x / 2 - 12, "Please chose your game mode:");
 
-    char ch;
-    Echo(&ch);
-    if (ch == '1')
-    {
-        *game_mode = 1;
-    }
-    else
-    {
-        *game_mode = 0;
+        char ch;
+        Echo(&ch);
+        if (ch == '1')
+        {
+            if (1 == Confirm(y, x, "Are you sure to chose God Mode?"))
+            {
+                *game_mode = 1;
+                break;
+            }
+        }
+        else if (1 == Confirm(y, x, "Are you sure to chose Normal Mode?"))
+        {
+            *game_mode = 0;
+            break;
+        }
     }
 }
 
@@ -259,12 +271,38 @@ void Clear()
  ***********************************************************************/
 void Echo(char *ch)
 {
+    CONSOLE_CURSOR_INFO cci; // 光标信息
+    cci.dwSize = 100;
+    cci.bVisible = TRUE;                       // 可见
+    SetConsoleCursorInfo(consoleHandle, &cci); // 重新设置
+
     fflush(stdin);
     Sleep(1000); // 需要修改
     fflush(stdin);
     *ch = getch();
     putchar(*ch);
     Sleep(500); // 需要修改
+
+    cci.bVisible = FALSE;                      // 不可见
+    SetConsoleCursorInfo(consoleHandle, &cci); // 将光标特性应用到控制台
+}
+
+/***************************************************************************
+ *int Confirm(int y, int x, char question[], char option[]);
+ *
+ *以固定的格式进行输入确认操作，返回1为确认，返回0为误操作
+ *
+ **************************************************************************/
+int Confirm(int y, int x, char question[])
+{
+    char ch;
+    Clear();
+    MvaddchRow(y / 3, x, '-');
+    MvaddchRow(2 * y / 3, x, '-');
+    MvaddString(y / 2 - 1, x / 2 - 16, question);
+    MvaddString(y / 2 + 1, x / 2 - 24, "Please enter 1 to confirm,enter any else key to go back:");
+    Echo(&ch);
+    return '1' == ch;
 }
 
 /***************************************************
@@ -630,44 +668,19 @@ int GameOver(int score, int y, int x)
         printf("%d", score);
         MvaddString(2 * y / 3 + 2, x / 2 - 24, "Enter 1 for another round,enter else key to exit:");
 
-        CONSOLE_CURSOR_INFO cci; // 光标信息
-        cci.dwSize = 100;
-        cci.bVisible = TRUE;                       // 可见
-        SetConsoleCursorInfo(consoleHandle, &cci); // 重新设置
-
         Echo(&ch);
-        Clear();
-        MvaddchRow(y / 3, x, '-');
-        MvaddchRow(2 * y / 3, x, '-');
-        if (ch == '1')
+        if ('1' == ch)
         {
-            MvaddString(y / 2 - 1, x / 2 - 16, "Are you sure to play another round?");
-            MvaddString(y / 2 + 1, x / 2 - 24, "Please enter 1 to confirm,enter any else key to go back:");
-            Echo(&ch);
-            if (ch == '1')
+            if (1 == Confirm(y, x, "Are you sure to play another round?"))
             {
                 control = 1;
                 break;
             }
-            else
-            {
-                continue;
-            }
         }
-        else
+        else if (1 == Confirm(y, x, "Are you sure to EXIT the game?"))
         {
-            MvaddString(y / 2 - 1, x / 2 - 16, "Are you sure to EXIT the game?");
-            MvaddString(y / 2 + 1, x / 2 - 24, "Please enter 1 to confirm,enter any else key to go back:");
-            Echo(&ch);
-            if (ch == '1')
-            {
-                control = 0;
-                break;
-            }
-            else
-            {
-                continue;
-            }
+            control = 0;
+            break;
         }
     }
     return control;
