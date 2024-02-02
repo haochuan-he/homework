@@ -19,6 +19,7 @@ typedef struct Obstacle // 障碍物，数组中1，2，3分别表示左中右�
     int Up[4][3];
     int Stop[4][3];
     int Money[4][3][2]; // 【跑道序号】【同一列顺序】【最低坐标；长度】
+    int Star[4][3][2];  // 无敌星【跑道序号】【同一列顺序】【y坐标；剩余持续时间】->时间放入[0][0][0]
 
 } Obstacle;
 
@@ -41,7 +42,7 @@ void MoveObstacle(Obstacle *obstacle, int y);
 void MoveObstaclePart(int *target, int y);
 void MoveMan(char ch, int *man, int *status, int *status_cnt);
 void Pause(int y, int x, char ch);
-void ChangeManStatus(int *status, int *status_cnt);
+void ChangeManStatus(int *status, int *status_cnt, Obstacle *obstacle);
 int HitCheck(int y, int x, Obstacle obstacle, int man, int statsus, int *score, int game_mode);
 
 int GameOver(int score, int y, int x);
@@ -96,7 +97,7 @@ int main()
                 break; // 脱离循环控制，进入游戏结算
             }
             ChangScoreAndSpeed(&score, &speed);
-            ChangeManStatus(&status, &status_cnt);
+            ChangeManStatus(&status, &status_cnt, &obstacle);
 
             while (kbhit() != 0)
             {                                            // 如果它检测到有键盘敲击，返回非零。没有则返回 0
@@ -349,8 +350,6 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     MvaddchCol(y, 5 * x / 9, CharOfRunway);
     MvaddchCol(y, 2 * x / 3, CharOfRunway);
 
-    MvaddchMiddle(MAN_Y * y, x, man, '*'); // 显示人物
-
     for (int i = 1; i <= 3; i++) // 显示障碍物
     {
         for (int j = 0; j < 3; j++)
@@ -361,6 +360,10 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
                 {
                     MvaddchMiddle(obstacle.Money[i][j][0] - k, x, i, '$');
                 }
+            }
+            if (obstacle.Star[i][j][0] != 0)
+            {
+                MvaddchMiddle(obstacle.Star[i][j][0], x, i, '~'); // 无敌星
             }
             if (obstacle.Down[i][j] != 0)
             {
@@ -375,6 +378,8 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
                 MvaddchMiddle(obstacle.Stop[i][j], x, i, 'X');
             }
         }
+
+        MvaddchMiddle(MAN_Y * y, x, man, '*'); // 显示人物
     }
 
     MvaddString(y - 2, 2, "Score:"); // 显示得分
@@ -414,6 +419,8 @@ void InitObstacle(Obstacle *obstacle)
             obstacle->Stop[i][j] = 0;
             obstacle->Money[i][j][0] = 0;
             obstacle->Money[i][j][1] = 0;
+            obstacle->Star[i][j][0] = 0;
+            obstacle->Star[i][j][1] = 0;
         }
     }
 }
@@ -467,6 +474,15 @@ void GenerateObstacle(Obstacle *obstacle, int random)
                 obstacle->Money[i][0][1] = random % 7;
             }
         }
+
+        if (obstacle->Star[i][0][0] == 0 && GenerateObstaclePart(*obstacle, i, 0)) // 生成单个无敌星
+        {
+            if (random % 71 == 1)
+            {
+                obstacle->Star[i][0][0] = 1;
+                random = rand() * 13 + 12;
+            }
+        }
     }
 }
 // 从属于GenerateObstacle,逻辑判断附近可以生成障碍物或金币
@@ -475,6 +491,7 @@ int GenerateObstaclePart(Obstacle obstacle, int i, int j)
     return (obstacle.Down[i][j] == 0 || obstacle.Down[i][j] > 5) &&
            (obstacle.Up[i][j] == 0 || obstacle.Up[i][j] > 5) &&
            (obstacle.Stop[i][j] == 0 || obstacle.Stop[i][j] > 5) &&
+           (obstacle.Star[i][j][0] == 0 || obstacle.Star[i][j][0] > 5) &&
            (obstacle.Money[i][j][0] == 0 || (obstacle.Money[i][j][0] - obstacle.Money[i][j][1] > 5));
 }
 
@@ -492,14 +509,12 @@ void MoveObstacle(Obstacle *obstacle, int y)
     {
         for (int j = 0; j < 3; j++)
         {
-            MoveObstaclePart(&(obstacle->Down[i][j]), y);
-            MoveObstaclePart(&(obstacle->Up[i][j]), y);
-            MoveObstaclePart(&(obstacle->Stop[i][j]), y);
-            // MoveObstaclePart(&(obstacle->Money[i][j][0]), y);
-            // if (obstacle->Money[i][j][0] == 0)
-            // {
-            //     obstacle->Money[i][j][1] = 0;
-            // }
+            // 移动显示的图标
+            MoveObstaclePart(&obstacle->Down[i][j], y);
+            MoveObstaclePart(&obstacle->Up[i][j], y);
+            MoveObstaclePart(&obstacle->Stop[i][j], y);
+            MoveObstaclePart(&obstacle->Star[i][j][0], y);
+
             if (obstacle->Money[i][j][0] > 0)
             {
                 obstacle->Money[i][j][0] += 1;
@@ -591,8 +606,9 @@ void Pause(int y, int x, char ch)
  *
  * 需要传入当前状态以及状态计数器
  ***********************************************************/
-void ChangeManStatus(int *status, int *status_cnt)
+void ChangeManStatus(int *status, int *status_cnt, Obstacle *obstacle)
 {
+    // 改变人物动作
     if (*status_cnt == 0)
     {
         *status = 0;
@@ -600,6 +616,17 @@ void ChangeManStatus(int *status, int *status_cnt)
     else
     {
         *status_cnt -= 1;
+    }
+    // 改变道具有效时间
+    for (int i = 1; i < 4; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            if (obstacle->Star[0][0][0] > 0)
+            {
+                obstacle->Star[0][0][0] -= 1;
+            }
+        }
     }
 }
 
@@ -619,14 +646,18 @@ int HitCheck(int y, int x, Obstacle obstacle, int man, int status, int *score, i
     {
         for (int j = 0; j < 3; j++)
         {
-            // 得钱
+            // 拾取金币或道具
             if (obstacle.Money[i][j][0] >= (int)(MAN_Y * y) &&
                 (int)(MAN_Y * y) >= obstacle.Money[i][j][0] - obstacle.Money[i][j][1])
             {
                 *score += 5; // 1 $ = 5 scores
             }
+            if (obstacle.Star[i][j][0] == (int)(MAN_Y * y) && man == i)
+            {
+                obstacle.Star[0][0][0] = 60; // 无敌星60帧
+            }
             // 撞上障碍物
-            if (0 == game_mode)
+            if (0 == game_mode && obstacle.Star[0][0][0] != 0)
             {
                 if (obstacle.Down[i][j] == ((int)(MAN_Y * y) + 1) && status != 1 && man == i)
                 {
