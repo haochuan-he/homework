@@ -26,15 +26,15 @@ typedef struct Obstacle // 障碍物，数组中1，2，3分别表示左中右�
 void GameStart(int y, int x, int *game_mode);
 
 void Mvaddch(int y, int x, char ch);
-void MvaddchCol(int y, int x, char ch);
-void MvaddchRow(int y, int x, char ch);
+void MvaddchCol(int y_begin, int y_end, int x, char ch);
+void MvaddchRow(int y, int x_begin, int x_end, char ch);
 void MvaddString(int y, int x, char ch[]);
-void MvaddchMiddle(int y, int x, int runway, char ch);
+void MvaddchMiddle(int y, int x, int runway, char ch[], int correct);
 void Clear();
 void Echo(char *ch);
 int Confirm(int y, int x, char question[]);
 void ChangScoreAndSpeed(int *score, int *speed);
-void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int status);
+void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int status, int game_mode);
 void InitObstacle(Obstacle *obstacle);
 void GenerateObstacle(Obstacle *obstacle, int random);
 int GenerateObstaclePart(Obstacle obstacle, int i, int j);
@@ -43,7 +43,7 @@ void MoveObstaclePart(int *target, int y);
 void MoveMan(char ch, int *man, int *status, int *status_cnt);
 void Pause(int y, int x, char ch);
 void ChangeManStatus(int *status, int *status_cnt, Obstacle *obstacle);
-int HitCheck(int y, int x, Obstacle obstacle, int man, int statsus, int *score, int game_mode);
+int HitCheck(int y, int x, Obstacle *obstacle, int man, int statsus, int *score, int game_mode);
 
 int GameOver(int score, int y, int x);
 
@@ -71,7 +71,8 @@ int main()
                                                    // 到这里，闪烁的光标就消失了。
 
         // 游戏数据初始化
-        int speed = 0, score = 0, man = 2, status = 0, status_cnt = 0, game_mode = 0, escape = 0;
+        int speed = 0, score = 0, man = 2, status = 0, status_cnt = 0,
+            game_mode = 0, escape = 0;
         // status: 0 for standing, 1 for sliding, 2 for jumping
         // game_mode 1 for God Mode , 0 for normal mode
 
@@ -90,9 +91,9 @@ int main()
         {
             int random_variable = rand();
             GenerateObstacle(&obstacle, random_variable);
-            Display(h, w, man, score, speed, obstacle, status);
+            Display(h, w, man, score, speed, obstacle, status, game_mode);
             MoveObstacle(&obstacle, h);
-            if (1 == HitCheck(h, w, obstacle, man, status, &score, game_mode))
+            if (1 == HitCheck(h, w, &obstacle, man, status, &score, game_mode))
             {
                 break; // 脱离循环控制，进入游戏结算
             }
@@ -144,8 +145,8 @@ void GameStart(int y, int x, int *game_mode)
     while (1)
     {
         Clear();
-        MvaddchRow(y / 3, x, '-');
-        MvaddchRow(2 * y / 3, x, '-');
+        MvaddchRow(y / 3, 0, x, '-');
+        MvaddchRow(2 * y / 3, 0, x, '-');
         MvaddString(y / 3 + 1, x / 2 - 4, "THE RUNNER");
         MvaddString(y / 3 + 4, x / 2 - 10, "->Enter 1 for God Mode");
         MvaddString(y / 3 + 5, x / 2 - 10, "->Enter any else key for Noraml Mode");
@@ -191,9 +192,9 @@ void Mvaddch(int y, int x, char ch)
  * 需要传入（屏幕高度，期望出现的x坐标，打印字符）
  *
  **********************************************************************/
-void MvaddchCol(int y, int x, char ch)
+void MvaddchCol(int y_begin, int y_end, int x, char ch)
 {
-    for (int row = 0; row < y; row++)
+    for (int row = y_begin; row < y_end; row++)
     {
         Mvaddch(row, x, ch);
     }
@@ -206,9 +207,9 @@ void MvaddchCol(int y, int x, char ch)
  *
  * 需要传入（期望打印的行处于的y，屏幕宽度，字符）
  ********************************************************************/
-void MvaddchRow(int y, int x, char ch)
+void MvaddchRow(int y, int x_begin, int x_end, char ch)
 {
-    for (int col = 0; col < x; col++)
+    for (int col = x_begin; col < x_end; col++)
     {
         Mvaddch(y, col, ch);
     }
@@ -236,18 +237,18 @@ void MvaddString(int y, int x, char ch[])
  *
  * 需要传入（字符在的y，屏幕宽度，跑道代号，字符）
  *************************************************************************/
-void MvaddchMiddle(int y, int x, int runway, char ch)
+void MvaddchMiddle(int y, int x, int runway, char ch[], int correct)
 {
     switch (runway)
     {
     case 1:
-        Mvaddch(y, 7 * x / 18, ch); // 左道
+        MvaddString(y, 7 * x / 18 + correct, ch); // 左道
         break;
     case 2:
-        Mvaddch(y, x / 2, ch); // 中道
+        MvaddString(y, x / 2 + correct, ch); // 中道
         break;
     case 3:
-        Mvaddch(y, 11 * x / 18, ch); // 右道
+        MvaddString(y, 11 * x / 18 + correct, ch); // 右道
         break;
     default:
         printf("the MvaddchMiddle have wrong!\n");
@@ -298,8 +299,8 @@ int Confirm(int y, int x, char question[])
 {
     char ch;
     Clear();
-    MvaddchRow(y / 3, x, '-');
-    MvaddchRow(2 * y / 3, x, '-');
+    MvaddchRow(y / 3, 0, x, '-');
+    MvaddchRow(2 * y / 3, 0, x, '-');
     MvaddString(y / 2 - 1, x / 2 - 16, question);
     MvaddString(y / 2 + 1, x / 2 - 24, "Please enter 1 to confirm,enter any else key to go back:");
     Echo(&ch);
@@ -337,7 +338,7 @@ void ChangScoreAndSpeed(int *score, int *speed)
  *需要传入（屏幕高度，屏幕宽度）;详细参数可在函数内调整
  *
  * ************************************************************************/
-void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int status)
+void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int status, int game_mode)
 {
     // for (int i = 0; i <= y; i++) // 清屏
     // {
@@ -345,10 +346,10 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     // }
     Clear();
     char CharOfRunway = '|'; // 显示跑道
-    MvaddchCol(y, x / 3, CharOfRunway);
-    MvaddchCol(y, 4 * x / 9, CharOfRunway);
-    MvaddchCol(y, 5 * x / 9, CharOfRunway);
-    MvaddchCol(y, 2 * x / 3, CharOfRunway);
+    MvaddchCol(0, y, x / 3, CharOfRunway);
+    MvaddchCol(0, y, 4 * x / 9, CharOfRunway);
+    MvaddchCol(0, y, 5 * x / 9, CharOfRunway);
+    MvaddchCol(0, y, 2 * x / 3, CharOfRunway);
 
     for (int i = 1; i <= 3; i++) // 显示障碍物
     {
@@ -358,34 +359,49 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
             {
                 for (int k = 0; k < obstacle.Money[i][j][1] && (obstacle.Money[i][j][0] - k > 0); k++)
                 {
-                    MvaddchMiddle(obstacle.Money[i][j][0] - k, x, i, '$');
+                    MvaddchMiddle(obstacle.Money[i][j][0] - k, x, i, "$", 0);
                 }
             }
             if (obstacle.Star[i][j][0] != 0)
             {
-                MvaddchMiddle(obstacle.Star[i][j][0], x, i, '~'); // 无敌星
+                MvaddchMiddle(obstacle.Star[i][j][0], x, i, "~", 0); // 无敌星
             }
             if (obstacle.Down[i][j] != 0)
             {
-                MvaddchMiddle(obstacle.Down[i][j], x, i, 'D');
+                MvaddchMiddle(obstacle.Down[i][j], x, i, "D", 0);
             }
             if (obstacle.Up[i][j] != 0)
             {
-                MvaddchMiddle(obstacle.Up[i][j], x, i, 'U');
+                MvaddchMiddle(obstacle.Up[i][j], x, i, "U", 0);
             }
             if (obstacle.Stop[i][j] != 0)
             {
-                MvaddchMiddle(obstacle.Stop[i][j], x, i, 'X');
+                MvaddchMiddle(obstacle.Stop[i][j], x, i, "X", 0);
             }
         }
 
-        MvaddchMiddle(MAN_Y * y, x, man, '*'); // 显示人物
+        MvaddchMiddle(MAN_Y * y, x, man, "*", 0); // 显示人物
     }
 
     MvaddString(y - 2, 2, "Score:"); // 显示得分
     printf("%d", score);
     MvaddString(y - 3, 2, "Speed:"); // 显示速度
     printf("%d", speed);
+    MvaddString(y - 4, 2, "Game Mode:"); // 显示游戏模式
+    if (game_mode == 0)
+    {
+        printf("Normal");
+    }
+    else
+    {
+        printf("God");
+    }
+    if (obstacle.Star[0][0][0] > 0)
+    {
+        MvaddString(y - 6, 2, "Star:"); // 显示无敌星剩余时间
+        printf("%d", obstacle.Star[0][0][0]);
+    }
+
     MvaddString(MAN_Y * y, 2 * x / 3 + 1, "Status:"); // 显示人物状态
     switch (status)
     {
@@ -477,10 +493,10 @@ void GenerateObstacle(Obstacle *obstacle, int random)
 
         if (obstacle->Star[i][0][0] == 0 && GenerateObstaclePart(*obstacle, i, 0)) // 生成单个无敌星
         {
-            if (random % 71 == 1)
+            if (random % 171 == 1)
             {
                 obstacle->Star[i][0][0] = 1;
-                random = rand() * 13 + 12;
+                random = rand() * 19;
             }
         }
     }
@@ -587,8 +603,8 @@ void Pause(int y, int x, char ch)
     if (ch == ' ')
     {
         Clear();
-        MvaddchRow(y / 3, x, '-');
-        MvaddchRow(2 * y / 3, x, '-');
+        MvaddchRow(y / 3, 0, x, '-');
+        MvaddchRow(2 * y / 3, 0, x, '-');
         MvaddString(y / 3 + 1, x / 2 - 2, "PAUSE");
         MvaddString(2 * y / 3 - 1, x / 2 - 12, "Enter any key to continue......");
         fflush(stdin); // 清空输入流缓存,避免连续按住空格暂停失败
@@ -618,15 +634,9 @@ void ChangeManStatus(int *status, int *status_cnt, Obstacle *obstacle)
         *status_cnt -= 1;
     }
     // 改变道具有效时间
-    for (int i = 1; i < 4; i++)
+    if (obstacle->Star[0][0][0] > 0)
     {
-        for (int j = 0; j < 3; j++)
-        {
-            if (obstacle->Star[0][0][0] > 0)
-            {
-                obstacle->Star[0][0][0] -= 1;
-            }
-        }
+        obstacle->Star[0][0][0] -= 1;
     }
 }
 
@@ -639,7 +649,7 @@ void ChangeManStatus(int *status, int *status_cnt, Obstacle *obstacle)
  *
  *需要传入（障碍物，人物位置(默认3*y/4处),人物状态）
  ****************************************************************/
-int HitCheck(int y, int x, Obstacle obstacle, int man, int status, int *score, int game_mode)
+int HitCheck(int y, int x, Obstacle *obstacle, int man, int status, int *score, int game_mode)
 {
     // 检测障碍物,判断游戏是否会停止
     for (int i = 1; i <= 3; i++)
@@ -647,27 +657,27 @@ int HitCheck(int y, int x, Obstacle obstacle, int man, int status, int *score, i
         for (int j = 0; j < 3; j++)
         {
             // 拾取金币或道具
-            if (obstacle.Money[i][j][0] >= (int)(MAN_Y * y) &&
-                (int)(MAN_Y * y) >= obstacle.Money[i][j][0] - obstacle.Money[i][j][1])
+            if (obstacle->Money[i][j][0] >= (int)(MAN_Y * y) &&
+                (int)(MAN_Y * y) >= obstacle->Money[i][j][0] - obstacle->Money[i][j][1])
             {
                 *score += 5; // 1 $ = 5 scores
             }
-            if (obstacle.Star[i][j][0] == (int)(MAN_Y * y) && man == i)
+            if (obstacle->Star[i][j][0] == (int)(MAN_Y * y) && man == i)
             {
-                obstacle.Star[0][0][0] = 60; // 无敌星60帧
+                obstacle->Star[0][0][0] = 60; // 无敌星60帧
             }
             // 撞上障碍物
-            if (0 == game_mode && obstacle.Star[0][0][0] != 0)
+            if (0 == game_mode && obstacle->Star[0][0][0] == 0)
             {
-                if (obstacle.Down[i][j] == ((int)(MAN_Y * y) + 1) && status != 1 && man == i)
+                if (obstacle->Down[i][j] == ((int)(MAN_Y * y) + 1) && status != 1 && man == i)
                 {
                     return 1; // 结束循环控制，启动游戏结算
                 }
-                if (obstacle.Up[i][j] == ((int)(MAN_Y * y) + 1) && status != 2 && man == i)
+                if (obstacle->Up[i][j] == ((int)(MAN_Y * y) + 1) && status != 2 && man == i)
                 {
                     return 1; // 结束循环控制，启动游戏结算
                 }
-                if (obstacle.Stop[i][j] == ((int)(MAN_Y * y) + 1) && man == i)
+                if (obstacle->Stop[i][j] == ((int)(MAN_Y * y) + 1) && man == i)
                 {
                     return 1; // 结束循环控制，启动游戏结算
                 }
@@ -692,8 +702,8 @@ int GameOver(int score, int y, int x)
     {
         Sleep(1000);
         Clear();
-        MvaddchRow(y / 3, x, '-');
-        MvaddchRow(2 * y / 3, x, '-');
+        MvaddchRow(y / 3, 0, x, '-');
+        MvaddchRow(2 * y / 3, 0, x, '-');
         MvaddString(y / 3 + 1, x / 2 - 4, "Game over!");
         MvaddString(2 * y / 3 - 1, x / 2 - 8, "Your final score:");
         printf("%d", score);
