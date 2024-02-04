@@ -32,6 +32,9 @@ void MvaddString(int y, int x, char ch[]);
 void MvaddchMiddle(int y, int x, int runway, char ch[], int correct);
 void Clear();
 void Echo(char *ch);
+void Input_1(char *ch, char *add, int speed);
+void Input_2(char *ch, char *add, int speed);
+void InputPart(char *ch, char *add);
 int Confirm(int y, int x, char question[]);
 void ChangScoreAndSpeed(int *score, int *speed);
 void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int status, int game_mode);
@@ -103,14 +106,9 @@ int main()
             ChangScoreAndSpeed(&score, &speed);
             ChangeManStatus(&status, &status_cnt, &obstacle);
 
-            while (kbhit() != 0)
-            {                 // 如果它检测到有键盘敲击，返回非零。没有则返回 0
-                ch = getch(); // 有键盘敲击，我们获取是哪一个键
-            }
-            while (kbhit() != 0)
-            {                  // 如果它检测到有键盘敲击，返回非零。没有则返回 0
-                add = getch(); // 有键盘敲击，我们获取是哪一个键
-            }
+            Input_1(&ch, &add, speed);
+            // Input_2(&ch, &add, speed);//长按会卡停游戏
+
             if (ch != '\0')
             {
                 Pause(h, w, ch);                              // 暂停逻辑(ch==' ')
@@ -125,7 +123,7 @@ int main()
                     }
                 }
             }
-            Sleep(200 - speed);
+            // Sleep(200 - speed);
         }
 
         /************************************************************************************/
@@ -297,6 +295,54 @@ void Echo(char *ch)
 
     cci.bVisible = FALSE;                      // 不可见
     SetConsoleCursorInfo(consoleHandle, &cci); // 将光标特性应用到控制台
+}
+
+/************************************************************************
+ * void Input_1(char *ch, char *add);
+ *void Input_2(char *ch, char *add);
+ *void InputPart(char *ch, char *add);
+ * 解决组合键输入问题；
+ * 1、2是两个不同的输入函数版本，Part用于交换ch和add，
+ * 使得ch保持第一输入，且出现组合输入时ch保持WS基础操作
+ *
+ ************************************************************************/
+void Input_1(char *ch, char *add, int speed)
+{
+    if (kbhit() != 0)
+    {
+        *ch = getch();
+    }
+    if (kbhit() != 0)
+    {
+        *add = getch();
+    }
+    Sleep(200 - speed);
+    InputPart(ch, add);
+}
+void Input_2(char *ch, char *add, int speed)
+{
+    int sleep = 0;
+    while (kbhit() != 0)
+    {
+        *add = *ch;
+        *ch = getch();
+        Sleep(200 - speed);
+        sleep = 1;
+    }
+    if (sleep == 0)
+    {
+        Sleep(200 - speed);
+    }
+    InputPart(ch, add);
+}
+// 从属于Input
+void InputPart(char *ch, char *add)
+{
+    if ((*add == 'w' || *add == 'W' || *add == 's' || *add == 'S') ||
+        (*add != '\0' && *ch == '\0')) // 未组合键
+    {
+        *ch ^= *add ^= *ch ^= *add;
+    }
 }
 
 /***************************************************************************
@@ -591,18 +637,7 @@ void MoveObstaclePart(int *target, int y)
  *****************************************************/
 void MoveMan(char ch, int *man, int *status, int *status_cnt, char add)
 {
-    // 左右移动更换跑道
-    if ((ch == 'a' || ch == 'A') && *man != 1)
-    {
-        *man -= 1;
-    }
-    else if ((ch == 'd' || ch == 'D') && *man != 3)
-    {
-        *man += 1;
-    }
-
     // 改变人物状态
-    // 首选ch
     if (ch == 'w' || ch == 'W')
     {
         *status = 2;
@@ -613,16 +648,28 @@ void MoveMan(char ch, int *man, int *status, int *status_cnt, char add)
         *status = 1;
         *status_cnt = 5; // 状态保持五帧
     }
-    // 次选add
-    if (add != '\0' && *status_cnt == 5)
+    if (add == '\0') // 未组合键
     {
+        // 左右移动更换跑道
+        if ((ch == 'a' || ch == 'A') && *man != 1)
+        {
+            *man -= 1;
+        }
+        else if ((ch == 'd' || ch == 'D') && *man != 3)
+        {
+            *man += 1;
+        }
+    }
+    else // 出现组合键
+    {
+
         if (add == 'a' || add == 'A')
         {
             *status += 2;
         }
-        if (add == 'd' || add == 'D')
+        else if (add == 'd' || add == 'D')
         {
-            *status += 2;
+            *status += 4;
         }
     }
 }
