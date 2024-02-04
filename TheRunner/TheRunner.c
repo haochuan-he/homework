@@ -40,7 +40,7 @@ void GenerateObstacle(Obstacle *obstacle, int random);
 int GenerateObstaclePart(Obstacle obstacle, int i, int j);
 void MoveObstacle(Obstacle *obstacle, int y);
 void MoveObstaclePart(int *target, int y);
-void MoveMan(char ch, int *man, int *status, int *status_cnt);
+void MoveMan(char ch, int *man, int *status, int *status_cnt, char add);
 void Pause(int y, int x, char ch);
 void ChangeManStatus(int *status, int *status_cnt, Obstacle *obstacle);
 int HitCheck(int y, int x, Obstacle *obstacle, int man, int statsus, int *score, int game_mode);
@@ -73,7 +73,9 @@ int main()
         // 游戏数据初始化
         int speed = 0, score = 0, man = 2, status = 0, status_cnt = 0,
             game_mode = 0, escape = 0;
-        // status: 0 for standing, 1 for sliding, 2 for jumping
+        // status: 0 for standing, 1 for sliding, 2 for jumping;
+        //         3 for sliding & left, 4 for jumping & left
+        //         5 for sliding & right , 6 for jumping & right
         // game_mode 1 for God Mode , 0 for normal mode
 
         Obstacle obstacle;
@@ -90,6 +92,7 @@ int main()
         while (1 && escape == 0)
         {
             int random_variable = rand();
+            char ch = '\0', add = '\0';
             GenerateObstacle(&obstacle, random_variable);
             Display(h, w, man, score, speed, obstacle, status, game_mode);
             MoveObstacle(&obstacle, h);
@@ -101,10 +104,17 @@ int main()
             ChangeManStatus(&status, &status_cnt, &obstacle);
 
             while (kbhit() != 0)
-            {                                            // 如果它检测到有键盘敲击，返回非零。没有则返回 0
-                char ch = getch();                       // 有键盘敲击，我们获取是哪一个键
-                Pause(h, w, ch);                         // 暂停逻辑(ch==' ')
-                MoveMan(ch, &man, &status, &status_cnt); // 人物左右移动
+            {                 // 如果它检测到有键盘敲击，返回非零。没有则返回 0
+                ch = getch(); // 有键盘敲击，我们获取是哪一个键
+            }
+            while (kbhit() != 0)
+            {                  // 如果它检测到有键盘敲击，返回非零。没有则返回 0
+                add = getch(); // 有键盘敲击，我们获取是哪一个键
+            }
+            if (ch != '\0')
+            {
+                Pause(h, w, ch);                              // 暂停逻辑(ch==' ')
+                MoveMan(ch, &man, &status, &status_cnt, add); // 人物左右移动
                 // Sleep(1000);       // 程序暂停 1000 毫秒
                 if (ch == '\e') // Esc结束游戏
                 {
@@ -414,6 +424,18 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     case 2:
         printf("jumping");
         break;
+    case 3:
+        printf("sliding & left");
+        break;
+    case 4:
+        printf("jumping & left");
+        break;
+    case 5:
+        printf("sliding & right");
+        break;
+    case 6:
+        printf("jumping & right");
+        break;
     default:
         printf("display man status wrong!\n");
     }
@@ -567,7 +589,7 @@ void MoveObstaclePart(int *target, int y)
  *
  * 需要传入ch
  *****************************************************/
-void MoveMan(char ch, int *man, int *status, int *status_cnt)
+void MoveMan(char ch, int *man, int *status, int *status_cnt, char add)
 {
     // 左右移动更换跑道
     if ((ch == 'a' || ch == 'A') && *man != 1)
@@ -580,6 +602,7 @@ void MoveMan(char ch, int *man, int *status, int *status_cnt)
     }
 
     // 改变人物状态
+    // 首选ch
     if (ch == 'w' || ch == 'W')
     {
         *status = 2;
@@ -589,6 +612,18 @@ void MoveMan(char ch, int *man, int *status, int *status_cnt)
     {
         *status = 1;
         *status_cnt = 5; // 状态保持五帧
+    }
+    // 次选add
+    if (add != '\0' && *status_cnt == 5)
+    {
+        if (add == 'a' || add == 'A')
+        {
+            *status += 2;
+        }
+        if (add == 'd' || add == 'D')
+        {
+            *status += 2;
+        }
     }
 }
 
