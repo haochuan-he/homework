@@ -46,7 +46,7 @@ void GenerateObstacle(Obstacle *obstacle, int random, int y);
 int GenerateObstaclePart(Obstacle obstacle, int i, int j);
 void MoveObstacle(Obstacle *obstacle, int y);
 void MoveObstaclePart(int *target, int y);
-void MoveMan(char ch, int *man, int *status, int *status_cnt, char add, Obstacle *obstacle, int y);
+void MoveMan(char ch, int *man, int *status, int *status_cnt, char add, Obstacle *obstacle, int y, int game_mode);
 void Pause(int y, int x, char ch);
 void ChangeManStatus(int *status, int *status_cnt, Obstacle *obstacle);
 int HitCheck(int y, int x, Obstacle *obstacle, int man, int statsus, int *score, int game_mode);
@@ -114,8 +114,8 @@ int main()
 
             if (ch != '\0')
             {
-                Pause(h, w, ch);                                            // 暂停逻辑(ch==' ')
-                MoveMan(ch, &man, &status, &status_cnt, add, &obstacle, h); // 人物左右移动
+                Pause(h, w, ch);                                                       // 暂停逻辑(ch==' ')
+                MoveMan(ch, &man, &status, &status_cnt, add, &obstacle, h, game_mode); // 人物左右移动
                 // Sleep(1000);       // 程序暂停 1000 毫秒
                 if (ch == '\e') // Esc结束游戏
                 {
@@ -469,15 +469,15 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
                 }
             }
         }
+    }
 
-        if (obstacle.Cross[0] == 0)
-        {
-            MvaddchMiddle(MAN_Y * y, x, man, "*", 0); // 显示人物
-        }
-        else
-        {
-            MvaddchMiddle(obstacle.Cross[1], x, man, "*", 0);
-        }
+    if (obstacle.Cross[0] == 0)
+    {
+        MvaddchMiddle(MAN_Y * y, x, man, "*", 0); // 显示人物
+    }
+    else
+    {
+        MvaddchMiddle(obstacle.Cross[1], x, man, "*", 0);
     }
 
     MvaddString(y - 2, 2, "Score:"); // 显示得分
@@ -551,7 +551,7 @@ void InitObstacle(Obstacle *obstacle, int y)
         }
     }
     obstacle->Cross[0] = 0;
-    obstacle->Cross[1] = (int)MAN_Y * y;
+    obstacle->Cross[1] = (int)(MAN_Y * y);
 }
 
 /*****************************************************
@@ -563,10 +563,10 @@ void InitObstacle(Obstacle *obstacle, int y)
  *********************************************************/
 void GenerateObstacle(Obstacle *obstacle, int random, int y)
 {
-    if (random % 101 == 1)
+    if (random % 101 == 1 && obstacle->Cross[0] == 0)
     {
         obstacle->Cross[0] = 1;
-        obstacle->Cross[1] = (int)MAN_Y * y;
+        obstacle->Cross[1] = (int)(MAN_Y * y);
         random = rand() + 31;
     }
     if (obstacle->Cross[0] == 0)
@@ -653,6 +653,18 @@ int GenerateObstaclePart(Obstacle obstacle, int i, int j)
  *********************************************************/
 void MoveObstacle(Obstacle *obstacle, int y)
 {
+    if (obstacle->Cross[0] > 0)
+    {
+        if (obstacle->Cross[0] < (int)(CROSS_Y * y))
+        {
+            obstacle->Cross[0] += 1;
+        }
+        else
+        {
+            obstacle->Cross[1] -= 1;
+            return; // 人移动，则其他图标都不移动了
+        }
+    }
     for (int i = 1; i < 4; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -675,18 +687,6 @@ void MoveObstacle(Obstacle *obstacle, int y)
                 if (obstacle->Money[i][j][1] == 0)
                 {
                     obstacle->Money[i][j][0] = 0;
-                }
-            }
-
-            if (obstacle->Cross[0] > 0)
-            {
-                if (obstacle->Cross[0] < (int)CROSS_Y * y)
-                {
-                    obstacle->Cross[0] += 1;
-                }
-                else
-                {
-                    obstacle->Cross[1] -= 1;
                 }
             }
         }
@@ -712,16 +712,16 @@ void MoveObstaclePart(int *target, int y)
  *
  * 需要传入ch
  *****************************************************/
-void MoveMan(char ch, int *man, int *status, int *status_cnt, char add, Obstacle *obstacle, int y)
+void MoveMan(char ch, int *man, int *status, int *status_cnt, char add, Obstacle *obstacle, int y, int game_mode)
 {
 
     // 路口移动部分判断
-    if (obstacle->Cross[0] > 0 && obstacle->Cross[1] < 7.0 * y / 12)
+    if (obstacle->Cross[0] > 0 && obstacle->Cross[1] < (int)(CROSS_Y * y))
     {
-        if (ch == 'w' || ch == 'W' || ch == 's' || ch == 'S')
+        if ((ch == 'a' || ch == 'A' || ch == 'd' || ch == 'D') || game_mode == 1)
         {
             obstacle->Cross[0] = 0;
-            obstacle->Cross[1] = 0;
+            obstacle->Cross[1] = (int)(MAN_Y * y);
         }
     }
     // 改变人物状态
@@ -858,7 +858,7 @@ int HitCheck(int y, int x, Obstacle *obstacle, int man, int status, int *score, 
             }
         }
     }
-    if (obstacle->Cross[0] > 0 && obstacle->Cross[1] <= (int)y / 4)
+    if (obstacle->Cross[0] > 0 && obstacle->Cross[1] <= (int)(y / 4))
     {
         return 1; // 结束游戏
         // 转入路口部分在MoveMan实现
