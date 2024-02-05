@@ -18,8 +18,9 @@ typedef struct Obstacle // 障碍物，数组中1，2，3分别表示左中右�
     int Down[4][3];
     int Up[4][3];
     int Stop[4][3];
-    int Money[4][3][2]; // 【跑道序号】【同一列顺序】【最低坐标；长度】
-    int Star[4][3][2];  // 无敌星【跑道序号】【同一列顺序】【y坐标；剩余持续时间】->时间放入[0][0][0]
+    int Combination[4][3][2]; // 组合障碍【跑道序号】【同一列顺序】【最低坐标；对应status组合序号3-6】
+    int Money[4][3][2];       // 【跑道序号】【同一列顺序】【最低坐标；长度】
+    int Star[4][3][2];        // 无敌星【跑道序号】【同一列顺序】【y坐标；剩余持续时间】->时间放入[0][0][0]
 
 } Obstacle;
 
@@ -434,6 +435,27 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
             {
                 MvaddchMiddle(obstacle.Stop[i][j], x, i, "X", 0);
             }
+            if (obstacle.Combination[i][j][0] != 0)
+            {
+                switch (obstacle.Combination[i][j][1])
+                {
+                case 3:
+                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "D&L", -1);
+                    break;
+                case 4:
+                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "U&L", -1);
+                    break;
+                case 5:
+                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "D&R", -1);
+                    break;
+                case 6:
+                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "U&R", -1);
+                    break;
+                default:
+                    printf("display conbination obstacles wrong\n");
+                    break;
+                }
+            }
         }
 
         MvaddchMiddle(MAN_Y * y, x, man, "*", 0); // 显示人物
@@ -501,10 +523,12 @@ void InitObstacle(Obstacle *obstacle)
             obstacle->Down[i][j] = 0;
             obstacle->Up[i][j] = 0;
             obstacle->Stop[i][j] = 0;
-            obstacle->Money[i][j][0] = 0;
-            obstacle->Money[i][j][1] = 0;
-            obstacle->Star[i][j][0] = 0;
-            obstacle->Star[i][j][1] = 0;
+            for (int k = 0; k < 2; k++)
+            {
+                obstacle->Money[i][j][k] = 0;
+                obstacle->Star[i][j][k] = 0;
+                obstacle->Combination[i][j][k] = 0;
+            }
         }
     }
 }
@@ -548,6 +572,15 @@ void GenerateObstacle(Obstacle *obstacle, int random)
                 }
             }
         }
+        if (obstacle->Combination[i][0][0] == 0 && GenerateObstaclePart(*obstacle, i, 0)) // 生成单个Combination
+        {
+            if (random % 43 == 1)
+            {
+                random = rand() * 2 + rand() * 9;
+                obstacle->Combination[i][0][0] = 1;
+                obstacle->Combination[i][0][1] = (random % 4) + 3;
+            }
+        }
 
         if (obstacle->Money[i][0][0] == 0 && GenerateObstaclePart(*obstacle, i, 0)) // 生成money
         {
@@ -561,7 +594,7 @@ void GenerateObstacle(Obstacle *obstacle, int random)
 
         if (obstacle->Star[i][0][0] == 0 && GenerateObstaclePart(*obstacle, i, 0)) // 生成单个无敌星
         {
-            if (random % 171 == 1)
+            if (random % 371 == 1)
             {
                 obstacle->Star[i][0][0] = 1;
                 random = rand() * 19;
@@ -575,6 +608,7 @@ int GenerateObstaclePart(Obstacle obstacle, int i, int j)
     return (obstacle.Down[i][j] == 0 || obstacle.Down[i][j] > 5) &&
            (obstacle.Up[i][j] == 0 || obstacle.Up[i][j] > 5) &&
            (obstacle.Stop[i][j] == 0 || obstacle.Stop[i][j] > 5) &&
+           (obstacle.Combination[i][j][0] == 0 || obstacle.Combination[i][j][0] > 5) &&
            (obstacle.Star[i][j][0] == 0 || obstacle.Star[i][j][0] > 5) &&
            (obstacle.Money[i][j][0] == 0 || (obstacle.Money[i][j][0] - obstacle.Money[i][j][1] > 5));
 }
@@ -598,6 +632,7 @@ void MoveObstacle(Obstacle *obstacle, int y)
             MoveObstaclePart(&obstacle->Up[i][j], y);
             MoveObstaclePart(&obstacle->Stop[i][j], y);
             MoveObstaclePart(&obstacle->Star[i][j][0], y);
+            MoveObstaclePart(&obstacle->Combination[i][j][0], y);
 
             if (obstacle->Money[i][j][0] > 0)
             {
@@ -760,6 +795,11 @@ int HitCheck(int y, int x, Obstacle *obstacle, int man, int status, int *score, 
                     return 1; // 结束循环控制，启动游戏结算
                 }
                 if (obstacle->Stop[i][j] == ((int)(MAN_Y * y) + 1) && man == i)
+                {
+                    return 1; // 结束循环控制，启动游戏结算
+                }
+                if (obstacle->Combination[i][j][0] == ((int)(MAN_Y * y) + 1) &&
+                    status != obstacle->Combination[i][j][1] && man == i)
                 {
                     return 1; // 结束循环控制，启动游戏结算
                 }
