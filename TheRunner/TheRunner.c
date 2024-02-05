@@ -112,20 +112,20 @@ int main()
             Input_1(&ch, &add, speed);
             // Input_2(&ch, &add, speed);//长按会卡停游戏
 
-            if (ch != '\0')
+            // if (ch != '\0')
+            // {
+            Pause(h, w, ch);                                                       // 暂停逻辑(ch==' ')
+            MoveMan(ch, &man, &status, &status_cnt, add, &obstacle, h, game_mode); // 人物左右移动
+            // Sleep(1000);       // 程序暂停 1000 毫秒
+            if (ch == '\e') // Esc结束游戏
             {
-                Pause(h, w, ch);                                                       // 暂停逻辑(ch==' ')
-                MoveMan(ch, &man, &status, &status_cnt, add, &obstacle, h, game_mode); // 人物左右移动
-                // Sleep(1000);       // 程序暂停 1000 毫秒
-                if (ch == '\e') // Esc结束游戏
+                if (1 == Confirm(h, w, "Are you sure to STOP the game?"))
                 {
-                    if (1 == Confirm(h, w, "Are you sure to STOP the game?"))
-                    {
-                        escape = 1;
-                        break;
-                    }
+                    escape = 1;
+                    break;
                 }
             }
+            // }
             // Sleep(200 - speed);
         }
 
@@ -405,10 +405,10 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     // }
     Clear();
     char CharOfRunway = '|'; // 显示跑道
-    MvaddchCol(obstacle.Cross[0], y, x / 3, CharOfRunway);
-    MvaddchCol(obstacle.Cross[0], y, 4 * x / 9, CharOfRunway);
-    MvaddchCol(obstacle.Cross[0], y, 5 * x / 9, CharOfRunway);
-    MvaddchCol(obstacle.Cross[0], y, 2 * x / 3, CharOfRunway);
+    MvaddchCol(obstacle.Cross[0] + 1, y, x / 3, CharOfRunway);
+    MvaddchCol(obstacle.Cross[0] + 1, y, 4 * x / 9, CharOfRunway);
+    MvaddchCol(obstacle.Cross[0] + 1, y, 5 * x / 9, CharOfRunway);
+    MvaddchCol(obstacle.Cross[0] + 1, y, 2 * x / 3, CharOfRunway);
 
     if (obstacle.Cross[0] > 0)
     {
@@ -720,8 +720,9 @@ void MoveMan(char ch, int *man, int *status, int *status_cnt, char add, Obstacle
     {
         if ((ch == 'a' || ch == 'A' || ch == 'd' || ch == 'D') || game_mode == 1)
         {
-            obstacle->Cross[0] = 0;
-            obstacle->Cross[1] = (int)(MAN_Y * y);
+            // obstacle->Cross[0] = 0;
+            // obstacle->Cross[1] = (int)(MAN_Y * y);
+            InitObstacle(obstacle, y);
         }
     }
     // 改变人物状态
