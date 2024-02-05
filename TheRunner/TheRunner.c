@@ -405,10 +405,10 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     // }
     Clear();
     char CharOfRunway = '|'; // 显示跑道
-    MvaddchCol(obstacle.Combination[0], y, x / 3, CharOfRunway);
-    MvaddchCol(obstacle.Combination[0], y, 4 * x / 9, CharOfRunway);
-    MvaddchCol(obstacle.Combination[0], y, 5 * x / 9, CharOfRunway);
-    MvaddchCol(obstacle.Combination[0], y, 2 * x / 3, CharOfRunway);
+    MvaddchCol(obstacle.Cross[0], y, x / 3, CharOfRunway);
+    MvaddchCol(obstacle.Cross[0], y, 4 * x / 9, CharOfRunway);
+    MvaddchCol(obstacle.Cross[0], y, 5 * x / 9, CharOfRunway);
+    MvaddchCol(obstacle.Cross[0], y, 2 * x / 3, CharOfRunway);
 
     if (obstacle.Cross[0] > 0)
     {
