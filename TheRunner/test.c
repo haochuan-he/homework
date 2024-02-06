@@ -12,7 +12,61 @@ int main()
 {
     // test_1();
     // test_2();
-    test_3();
+    // test_3();
+    /*
+    \033 || \e
+    \033[31m：红色
+    \033[32m：绿色
+    \033[33m：黄色
+    \033[34m：蓝色
+    \033[35m：洋红色
+    \033[36m：青色
+    \033[37m：白色
+
+    \033[3m：设置文字颜色
+    \033[1m：设置文字粗体
+    \033[0m：重置文字格式
+
+    \033[3m斜体
+    \033[4m下划线
+
+    */
+    printf("\e[31m");          // 设置文字颜色为红色
+    printf("Hello, World!\n"); // 输出红色粗体文字
+
+    printf("\e[1m");           // 设置文字粗体
+    printf("Hello, World!\n"); // 输出红色粗体文字
+
+    printf("\033[32m");
+    printf("Hello, World!\n");
+
+    printf("\033[33m");
+    printf("Hello, World!\n");
+
+    printf("\033[34m");
+    printf("Hello, World!\n");
+
+    printf("\033[35m");
+    printf("Hello, World!\n");
+
+    printf("\033[36m");
+    printf("Hello, World!\n");
+
+    printf("\033[37m");
+    printf("Hello, World!\n");
+
+    printf("\033[2m"); // 半透明?
+    printf("Hello, World!\n");
+
+    printf("\033[3m"); // 斜体（有点艺术感
+    printf("Hello, World!\n");
+
+    printf("\033[4m"); // 下划线
+    printf("Hello, World!\n");
+    Sleep(1000);
+    printf("\033[2J"); // 可以清屏2J
+
+    printf("\033[0m"); // 重置文字格式
 }
 
 void test_3()

@@ -97,6 +97,10 @@ int main()
         /************************************************************************************/
         while (1 && escape == 0)
         {
+            GetConsoleScreenBufferInfo(consoleHandle, &csbi); // 获取屏幕信息
+            w = csbi.dwSize.X;
+            h = csbi.dwSize.Y;
+
             int random_variable = rand();
             char ch = '\0', add = '\0';
             GenerateObstacle(&obstacle, random_variable, h);
@@ -119,7 +123,7 @@ int main()
             // Sleep(1000);       // 程序暂停 1000 毫秒
             if (ch == '\e') // Esc结束游戏
             {
-                if (1 == Confirm(h, w, "Are you sure to STOP the game?"))
+                if (1 == Confirm(h, w, "Are you sure to \e[31;1;3mSTOP\e[0m the game?"))
                 {
                     escape = 1;
                     break;
@@ -158,22 +162,24 @@ void GameStart(int y, int x, int *game_mode)
         Clear();
         MvaddchRow(y / 3, 0, x, '-');
         MvaddchRow(2 * y / 3, 0, x, '-');
-        MvaddString(y / 3 + 1, x / 2 - 4, "THE RUNNER");
-        MvaddString(y / 3 + 4, x / 2 - 10, "->Enter 1 for God Mode");
-        MvaddString(y / 3 + 5, x / 2 - 10, "->Enter any else key for Noraml Mode");
+        // printf("\033[31;1;3m"); // 红色粗斜体
+        MvaddString(y / 3 + 1, x / 2 - 4, "\e[31;1;3mTHE RUNNER\e[0m");
+        // printf("\033[0m"); // 重置
+        MvaddString(y / 3 + 4, x / 2 - 10, "->Enter\e[4m 1 \e[0mfor \e[36;1;3mGod Mode\e[0m");
+        MvaddString(y / 3 + 5, x / 2 - 10, "->Enter \e[4many else key\e[0m for \e[36;1;3mNoraml Mode\e[0m");
         MvaddString(y / 3 + 3, x / 2 - 12, "Please chose your game mode:");
 
         char ch;
         Echo(&ch);
         if (ch == '1')
         {
-            if (1 == Confirm(y, x, "Are you sure to chose God Mode?"))
+            if (1 == Confirm(y, x, "Are you sure to chose \e[36;1;3mGod Mode\e[0m?"))
             {
                 *game_mode = 1;
                 break;
             }
         }
-        else if (1 == Confirm(y, x, "Are you sure to chose Normal Mode?"))
+        else if (1 == Confirm(y, x, "Are you sure to chose \e[36;1;3mNoraml Mode\e[0m?"))
         {
             *game_mode = 0;
             break;
@@ -229,9 +235,10 @@ void MvaddchRow(int y, int x_begin, int x_end, char ch)
 /*******************************************************************
  *void MvaddString(int y, int x, char ch[])
  *
- *从 x,y处开始打印字符串ch[]
+ *从 x,y处开始打印字符串ch[];
+ *ch[]部分由printf函数实现，可以嵌入ANSI转义序列
  *
- * 需要传入（期望出现的y坐标，期望出现的x坐标，打印字符串）
+ * 需要传入（期望出现的y坐标，期望出现的x坐标，要打印字符串）
  *
  **********************************************************************/
 void MvaddString(int y, int x, char ch[])
@@ -274,7 +281,9 @@ void MvaddchMiddle(int y, int x, int runway, char ch[], int correct)
  ***********************************************************************/
 void Clear()
 {
-    system("cls"); // 启动游戏的时候有几率闪屏
+    system("cls"); // 启动游戏和通过路口的时候有几率闪屏
+    // printf("\033[2J"); // 可以清屏,但会滚动屏幕
+    // gotoxy(0, 100); // 我的库里没有？？
 }
 
 /**********************************************************************
@@ -349,9 +358,10 @@ void InputPart(char *ch, char *add)
 }
 
 /***************************************************************************
- *int Confirm(int y, int x, char question[], char option[]);
+ *int Confirm(int y, int x, char question[]);
  *
- *以固定的格式进行输入确认操作，返回1为确认，返回0为误操作
+ *以固定的格式进行输入确认操作，返回1为确认，返回0为误操作;
+ *question由printf实现，可以嵌入ANSI转义序列
  *
  **************************************************************************/
 int Confirm(int y, int x, char question[])
@@ -361,7 +371,8 @@ int Confirm(int y, int x, char question[])
     MvaddchRow(y / 3, 0, x, '-');
     MvaddchRow(2 * y / 3, 0, x, '-');
     MvaddString(y / 2 - 1, x / 2 - 16, question);
-    MvaddString(y / 2 + 1, x / 2 - 24, "Please enter 1 to confirm,enter any else key to go back:");
+    MvaddString(y / 2 + 1, x / 2 - 24, "Please enter\e[4m 1 \e[0mto \e[33;3mconfirm\e[0m,"
+                                       "enter \e[4many else key\e[0m to \e[33;3mgo back\e[0m:");
     Echo(&ch);
     return '1' == ch;
 }
@@ -418,7 +429,7 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
         {
             MvaddchRow(obstacle.Cross[0] - y / 9, 0, x / 3, '-');
             MvaddchRow(obstacle.Cross[0] - y / 9, 2 * x / 3, x, '-');
-            MvaddchMiddle(obstacle.Cross[0] - y / 9, x, 2, "<--  -->", -4);
+            MvaddchMiddle(obstacle.Cross[0] - y / 9, x, 2, "\e[32;1m<--  -->\e[0m", -4);
         }
         if (obstacle.Cross[0] - 2 * y / 9 > 0)
         {
@@ -437,6 +448,7 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
         {
             if (obstacle.Money[i][j][0] != 0) // 显示金币
             {
+                printf("\033[33m"); // 黄色
                 for (int k = 0; k < obstacle.Money[i][j][1] && (obstacle.Money[i][j][0] - k > 0); k++)
                 {
                     MvaddchMiddle(obstacle.Money[i][j][0] - k, x, i, "$", 0);
@@ -444,35 +456,46 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
             }
             if (obstacle.Star[i][j][0] != 0)
             {
+                printf("\033[35m");                                  // 洋红色
                 MvaddchMiddle(obstacle.Star[i][j][0], x, i, "~", 0); // 无敌星
             }
+            printf("\033[36m"); // 青色
             if (obstacle.Down[i][j] != 0)
             {
-                MvaddchMiddle(obstacle.Down[i][j], x, i, "D", 0);
+                MvaddchMiddle(obstacle.Down[i][j], x, i, "|", 0);
+                MvaddchMiddle(obstacle.Down[i][j] + 1, x, i, "v", 0);
             }
             if (obstacle.Up[i][j] != 0)
             {
-                MvaddchMiddle(obstacle.Up[i][j], x, i, "U", 0);
+                MvaddchMiddle(obstacle.Up[i][j], x, i, "^", 0);
+                MvaddchMiddle(obstacle.Up[i][j] + 1, x, i, "|", 0);
             }
             if (obstacle.Stop[i][j] != 0)
+
             {
+                printf("\033[31m"); // 红色
                 MvaddchMiddle(obstacle.Stop[i][j], x, i, "X", 0);
+                printf("\033[36m"); // 改回青色
             }
             if (obstacle.Combination[i][j][0] != 0)
             {
                 switch (obstacle.Combination[i][j][1])
                 {
                 case 3:
-                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "D&L", -1);
+                    MvaddchMiddle(obstacle.Combination[i][j][0] - 1, x, i, "|", -3); // D&L
+                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "v & <--", -3);
                     break;
                 case 4:
-                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "U&L", -1);
+                    MvaddchMiddle(obstacle.Combination[i][j][0] - 1, x, i, "^", -3); // U&L
+                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "| & <--", -3);
                     break;
                 case 5:
-                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "D&R", -1);
+                    MvaddchMiddle(obstacle.Combination[i][j][0] - 1, x, i, "|", -3); // D&R
+                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "v & -->", -3);
                     break;
                 case 6:
-                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "U&R", -1);
+                    MvaddchMiddle(obstacle.Combination[i][j][0] - 1, x, i, "^", -3); // U&R
+                    MvaddchMiddle(obstacle.Combination[i][j][0], x, i, "| & -->", -3);
                     break;
                 default:
                     printf("display conbination obstacles wrong\n");
@@ -482,6 +505,7 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
         }
     }
 
+    printf("\033[32;1;4m"); // 绿色、粗体、下划线
     if (obstacle.Cross[0] == 0)
     {
         MvaddchMiddle(MAN_Y * y, x, man, "*", 0); // 显示人物
@@ -490,6 +514,7 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     {
         MvaddchMiddle(obstacle.Cross[1], x, man, "*", 0);
     }
+    printf("\033[0m"); // 重置
 
     MvaddString(y - 2, 2, "Score:"); // 显示得分
     printf("%d", score);
@@ -506,8 +531,10 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     }
     if (obstacle.Star[0][0][0] > 0)
     {
+        printf("\033[35m");             // 洋红色
         MvaddString(y - 6, 2, "Star:"); // 显示无敌星剩余时间
         printf("%d", obstacle.Star[0][0][0]);
+        printf("\033[0m");
     }
 
     MvaddString(MAN_Y * y, 2 * x / 3 + 1, "Status:"); // 显示人物状态
@@ -786,7 +813,7 @@ void Pause(int y, int x, char ch)
         Clear();
         MvaddchRow(y / 3, 0, x, '-');
         MvaddchRow(2 * y / 3, 0, x, '-');
-        MvaddString(y / 3 + 1, x / 2 - 2, "PAUSE");
+        MvaddString(y / 3 + 1, x / 2 - 2, "\e[3;33mPAUSE\e[0m");
         MvaddString(2 * y / 3 - 1, x / 2 - 12, "Enter any key to continue......");
         fflush(stdin); // 清空输入流缓存,避免连续按住空格暂停失败
         Sleep(1000);
@@ -895,21 +922,22 @@ int GameOver(int score, int y, int x)
         Clear();
         MvaddchRow(y / 3, 0, x, '-');
         MvaddchRow(2 * y / 3, 0, x, '-');
-        MvaddString(y / 3 + 1, x / 2 - 4, "Game over!");
+        MvaddString(y / 3 + 1, x / 2 - 4, "\e[31;1;3mGame over!\e[0m");
         MvaddString(2 * y / 3 - 1, x / 2 - 8, "Your final score:");
-        printf("%d", score);
-        MvaddString(2 * y / 3 + 2, x / 2 - 24, "Enter 1 for another round,enter else key to exit:");
+        printf("\e[36;1;4m%d\e[0m", score);
+        MvaddString(2 * y / 3 + 2, x / 2 - 24, "Enter\e[4m 1 \e[0mfor \e[33;3manother round\e[0m,"
+                                               "enter \e[4many else key\e[0m to \e[33;3mexit\e[0m:");
 
         Echo(&ch);
         if ('1' == ch)
         {
-            if (1 == Confirm(y, x, "Are you sure to play another round?"))
+            if (1 == Confirm(y, x, "Are you sure to \e[33;3mplay another round\e[0m?"))
             {
                 control = 1;
                 break;
             }
         }
-        else if (1 == Confirm(y, x, "Are you sure to EXIT the game?"))
+        else if (1 == Confirm(y, x, "Are you sure to \e[31;1;3mEXIT\e[0m the game?"))
         {
             control = 0;
             break;
