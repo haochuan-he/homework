@@ -414,6 +414,17 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     {
         MvaddchRow(obstacle.Cross[0], 0, x / 3, '-');
         MvaddchRow(obstacle.Cross[0], 2 * x / 3, x, '-');
+        if (obstacle.Cross[0] - y / 9 > 0)
+        {
+            MvaddchRow(obstacle.Cross[0] - y / 9, 0, x / 3, '-');
+            MvaddchRow(obstacle.Cross[0] - y / 9, 2 * x / 3, x, '-');
+            MvaddchMiddle(obstacle.Cross[0] - y / 9, x, 2, "<--  -->", -4);
+        }
+        if (obstacle.Cross[0] - 2 * y / 9 > 0)
+        {
+            MvaddchRow(obstacle.Cross[0] - 2 * y / 9, 0, x / 3, '-');
+            MvaddchRow(obstacle.Cross[0] - 2 * y / 9, 2 * x / 3, x, '-');
+        }
         if (obstacle.Cross[0] - y / 3 > 0) // 可以打印上界
         {
             MvaddchRow(obstacle.Cross[0] - y / 3, 0, x, '-');
