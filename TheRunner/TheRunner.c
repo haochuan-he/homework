@@ -12,7 +12,7 @@
 #define CROSS_Y 7.0 / 12 // 丁字路口横向最低处的系数
 
 HANDLE consoleHandle; // 操作控制台（也就是那个黑框框）需要的一个变量
-int w, h;             // 高度，宽度，对应 y 和 x
+int w, h, record = 0; // 高度，宽度，对应 y 和 x
 
 typedef struct Obstacle // 障碍物，数组中1，2，3分别表示左中右道中障碍物y坐标;一列中可以多个
 {
@@ -526,6 +526,10 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
 
     MvaddString(y - 2, 2, "Score:"); // 显示得分
     printf("%d", score);
+    if (score > record && record > 0)
+    {
+        printf(" \e[33;3mNew Record!\e[0m");
+    }
     MvaddString(y - 3, 2, "Speed:"); // 显示速度
     printf("%d", speed);
     MvaddString(y - 4, 2, "Game Mode:"); // 显示游戏模式
@@ -995,8 +999,21 @@ int GameOver(int score, int y, int x)
         MvaddchRow(y / 3, 0, x, '-');
         MvaddchRow(2 * y / 3, 0, x, '-');
         MvaddString(y / 3 + 1, x / 2 - 4, "\e[31;1;3mGame over!\e[0m");
-        MvaddString(2 * y / 3 - 1, x / 2 - 8, "Your final score:");
+        MvaddString(2 * y / 3 - 3, x / 2 - 8, "Your final score:");
         printf("\e[36;1;4m%d\e[0m", score);
+        if (score > record)
+        {
+            if (record > 0)
+            {
+                MvaddString(2 * y / 3 - 2, x / 2 - 6, "\e[33;3m Breaking Record!\e[0m");
+            }
+            record = score;
+        }
+        else
+        {
+            MvaddString(2 * y / 3 - 3, x / 2 - 8, "\e[33;3m Your Best Record:");
+            printf("%d\e[0m", record);
+        }
         MvaddString(2 * y / 3 + 2, x / 2 - 24, "Enter\e[4m 1 \e[0mfor \e[33;3manother round\e[0m,"
                                                "enter \e[4many else key\e[0m to \e[33;3mexit\e[0m:");
 
