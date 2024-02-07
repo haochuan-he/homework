@@ -22,6 +22,8 @@ typedef struct Obstacle // 障碍物，数组中1，2，3分别表示左中右�
     int Combination[4][3][2]; // 组合障碍【跑道序号】【同一列顺序】【最低坐标；对应status组合序号3-6】
     int Money[4][3][2];       // 【跑道序号】【同一列顺序】【最低坐标；长度】
     int Star[4][3][2];        // 无敌星【跑道序号】【同一列顺序】【y坐标；剩余持续时间】->时间放入[0][0][0]
+    int Double[4][3];         // 金币翻倍【跑道序号】【同一列序号】存放对应y坐标->时间放入[0][0]
+    int Shoes[4][3];          // 跑鞋【跑道序号】【同一列序号】存放对应y坐标->时间放入[0][0]
     int Cross[2];             // 丁字路口【横向最低处y坐标；人的y坐标】
 
 } Obstacle;
@@ -410,10 +412,6 @@ void ChangScoreAndSpeed(int *score, int *speed)
  * ************************************************************************/
 void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int status, int game_mode)
 {
-    // for (int i = 0; i <= y; i++) // 清屏
-    // {
-    //     printf("\n");
-    // }
     Clear();
     char CharOfRunway = '|'; // 显示跑道
     MvaddchCol(obstacle.Cross[0] + 1, y, x / 3, CharOfRunway);
@@ -458,6 +456,16 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
             {
                 printf("\033[35m");                                  // 洋红色
                 MvaddchMiddle(obstacle.Star[i][j][0], x, i, "~", 0); // 无敌星
+            }
+            if (obstacle.Double[i][j] != 0)
+            {
+                printf("\033[35m");                                  // 洋红色
+                MvaddchMiddle(obstacle.Double[i][j], x, i, "x2", 0); // 金币翻倍
+            }
+            if (obstacle.Shoes[i][j] != 0)
+            {
+                printf("\033[35m");                                // 洋红色
+                MvaddchMiddle(obstacle.Shoes[i][j], x, i, "!", 0); // 跑鞋
             }
             printf("\033[36m"); // 青色
             if (obstacle.Down[i][j] != 0)
@@ -531,9 +539,23 @@ void Display(int y, int x, int man, int score, int speed, Obstacle obstacle, int
     }
     if (obstacle.Star[0][0][0] > 0)
     {
-        printf("\033[35m");             // 洋红色
+        printf("\033[35;1m");           // 洋红色
         MvaddString(y - 6, 2, "Star:"); // 显示无敌星剩余时间
         printf("%d", obstacle.Star[0][0][0]);
+        printf("\033[0m");
+    }
+    if (obstacle.Double[0][0] > 0)
+    {
+        printf("\033[35;1m");                   // 洋红色
+        MvaddString(y - 7, 2, "Money Double:"); // 显示金币翻倍剩余时间
+        printf("%d", obstacle.Double[0][0]);
+        printf("\033[0m");
+    }
+    if (obstacle.Shoes[0][0] > 0)
+    {
+        printf("\033[35;1m");            // 洋红色
+        MvaddString(y - 8, 2, "Shoes:"); // 显示跑鞋剩余时间
+        printf("%d", obstacle.Shoes[0][0]);
         printf("\033[0m");
     }
 
@@ -580,6 +602,8 @@ void InitObstacle(Obstacle *obstacle, int y)
             obstacle->Down[i][j] = 0;
             obstacle->Up[i][j] = 0;
             obstacle->Stop[i][j] = 0;
+            obstacle->Double[i][j] = 0;
+            obstacle->Shoes[i][j] = 0;
             for (int k = 0; k < 2; k++)
             {
                 obstacle->Money[i][j][k] = 0;
@@ -601,7 +625,7 @@ void InitObstacle(Obstacle *obstacle, int y)
  *********************************************************/
 void GenerateObstacle(Obstacle *obstacle, int random, int y)
 {
-    if (random % 101 == 1 && obstacle->Cross[0] == 0)
+    if (random % 183 == 1 && obstacle->Cross[0] == 0)
     {
         obstacle->Cross[0] = 1;
         obstacle->Cross[1] = (int)(MAN_Y * y);
@@ -661,10 +685,26 @@ void GenerateObstacle(Obstacle *obstacle, int random, int y)
 
             if (obstacle->Star[i][0][0] == 0 && GenerateObstaclePart(*obstacle, i, 0)) // 生成单个无敌星
             {
-                if (random % 371 == 1)
+                if (random % 171 == 1)
                 {
                     obstacle->Star[i][0][0] = 1;
                     random = rand() + 19;
+                }
+            }
+            if (obstacle->Double[i][0] == 0 && GenerateObstaclePart(*obstacle, i, 0)) // 生成单个金币翻倍
+            {
+                if (random % 135 == 1)
+                {
+                    obstacle->Double[i][0] = 1;
+                    random = rand() + 43;
+                }
+            }
+            if (obstacle->Shoes[i][0] == 0 && GenerateObstaclePart(*obstacle, i, 0)) // 生成单个金币翻倍
+            {
+                if (random % 143 == 1)
+                {
+                    obstacle->Shoes[i][0] = 1;
+                    random = rand() + 91;
                 }
             }
         }
@@ -678,6 +718,8 @@ int GenerateObstaclePart(Obstacle obstacle, int i, int j)
            (obstacle.Stop[i][j] == 0 || obstacle.Stop[i][j] > 5) &&
            (obstacle.Combination[i][j][0] == 0 || obstacle.Combination[i][j][0] > 5) &&
            (obstacle.Star[i][j][0] == 0 || obstacle.Star[i][j][0] > 5) &&
+           (obstacle.Double[i][j] == 0 || obstacle.Double[i][j] > 5) &&
+           (obstacle.Shoes[i][j] == 0 || obstacle.Shoes[i][j] > 5) &&
            (obstacle.Money[i][j][0] == 0 || (obstacle.Money[i][j][0] - obstacle.Money[i][j][1] > 5));
 }
 
@@ -712,6 +754,8 @@ void MoveObstacle(Obstacle *obstacle, int y)
             MoveObstaclePart(&obstacle->Up[i][j], y);
             MoveObstaclePart(&obstacle->Stop[i][j], y);
             MoveObstaclePart(&obstacle->Star[i][j][0], y);
+            MoveObstaclePart(&obstacle->Double[i][j], y);
+            MoveObstaclePart(&obstacle->Shoes[i][j], y);
             MoveObstaclePart(&obstacle->Combination[i][j][0], y);
 
             if (obstacle->Money[i][j][0] > 0)
@@ -768,11 +812,19 @@ void MoveMan(char ch, int *man, int *status, int *status_cnt, char add, Obstacle
     {
         *status = 2;
         *status_cnt = 5; // 状态保持五帧
+        if (obstacle->Shoes[0][0] > 0)
+        {
+            *status_cnt = 5; // 状态保持5+5=10
+        }
     }
     else if (ch == 's' || ch == 'S')
     {
         *status = 1;
         *status_cnt = 5; // 状态保持五帧
+        if (obstacle->Shoes[0][0] > 0)
+        {
+            *status_cnt = 5; // 状态保持5+5=10
+        }
     }
     if (add == '\0') // 未组合键
     {
@@ -846,6 +898,14 @@ void ChangeManStatus(int *status, int *status_cnt, Obstacle *obstacle)
     {
         obstacle->Star[0][0][0] -= 1;
     }
+    if (obstacle->Double[0][0] > 0)
+    {
+        obstacle->Double[0][0] -= 1;
+    }
+    if (obstacle->Shoes[0][0] > 0)
+    {
+        obstacle->Shoes[0][0] -= 1;
+    }
 }
 
 /*******************************************************************
@@ -869,10 +929,22 @@ int HitCheck(int y, int x, Obstacle *obstacle, int man, int status, int *score, 
                 (int)(MAN_Y * y) >= obstacle->Money[i][j][0] - obstacle->Money[i][j][1])
             {
                 *score += 5; // 1 $ = 5 scores
+                if (obstacle->Double[0][0] > 0)
+                {
+                    *score += 5; // 1 $ = (5+5) scores
+                }
             }
             if (obstacle->Star[i][j][0] == (int)(MAN_Y * y) && man == i)
             {
                 obstacle->Star[0][0][0] = 60; // 无敌星60帧
+            }
+            if (obstacle->Double[i][j] == (int)(MAN_Y * y) && man == i)
+            {
+                obstacle->Double[0][0] = 180; // 金币翻倍180 帧
+            }
+            if (obstacle->Shoes[i][j] == (int)(MAN_Y * y) && man == i)
+            {
+                obstacle->Shoes[0][0] = 100; // 金币翻倍100 帧
             }
             // 撞上障碍物
             if (0 == game_mode && obstacle->Star[0][0][0] == 0)
